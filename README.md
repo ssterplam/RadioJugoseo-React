@@ -1,16 +1,82 @@
-# React + Vite
+# Radio Jugoseo
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Proyecto académico de radio online en proceso de migración desde HTML, CSS y JavaScript a **React con Vite**.
 
-Currently, two official plugins are available:
+Utiliza React-Bootstrap para la interfaz y React Router para la navegación. El reproductor mantiene la transmisión mientras se cambia de sección.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Estado actual
 
-## React Compiler
+Implementado:
+- Portada y carrusel.
+- Inicio con chat externo y tarjetas destacadas.
+- Registro y login con validaciones.
+- Sesión y acceso a páginas internas según rol.
+- Formulario de contacto con envío simulado.
+- Catálogo de programas, programación semanal y páginas de detalle.
+- Diseño adaptable a dispositivos móviles.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Pendiente:
+- Noticias, tienda, carrito y panel administrativo.
+- Pruebas unitarias con Vitest y cobertura.
+- Mejoras visuales y reemplazo del rol Vendedor por Locutor.
 
-## Expanding the ESLint configuration
+El proyecto funciona sin backend. Las cuentas se guardan en localStorage y la sesión en sessionStorage. Utilizar únicamente datos y contraseñas de prueba.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Requisitos
+
+- Node.js compatible con la versión de Vite utilizada.
+- npm.
+- Conexión a Internet para la transmisión de radio y el chat externo.
+
+## Ejecutar el proyecto
+
+Abrir una terminal en la carpeta que contiene package.json.
+
+Instalar las dependencias:
+
+```bash
+npm install
+```
+
+Iniciar el servidor de desarrollo:
+
+```bash
+npm run dev
+```
+
+Abrir la dirección que indique la terminal.
+
+## Compilación de producción
+
+Generar la compilación:
+
+```bash
+npm run build
+```
+
+Previsualizarla localmente:
+
+```bash
+npm run preview
+```
+
+## Cuentas de demostración
+
+| Rol | Correo | Contraseña |
+|---|---|---|
+| Cliente | cliente@duoc.cl | client123 |
+| Vendedor | vendedor@profesor.duoc.cl | vendedor1 |
+| Administrador | admin@jugoseo.com | admin123 |
+
+Los paneles de Vendedor y Administrador todavía están pendientes de migración.
+
+También es posible crear una cuenta desde “Regístrate aquí”.
+
+## Nota para Windows
+
+Si PowerShell bloquea la ejecución de npm.ps1, utilizar npm.cmd en lugar de npm:
+
+```powershell
+npm.cmd install
+npm.cmd run dev
+```
