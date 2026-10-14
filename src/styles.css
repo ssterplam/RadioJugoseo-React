@@ -1,0 +1,647 @@
+/* =========================================================
+   styles.css — Estilos de marca Jugoseo.com
+   Aquí se centralizan los colores y detalles visuales
+   para no tocar el HTML cuando se quiera ajustar el estilo.
+   ========================================================= */
+
+:root {
+  --jugoseo-fondo-oscuro: #0d0f12;
+  --jugoseo-fondo-oscuro-2: #15181c;
+  --jugoseo-cian: #22c3e6;
+  --jugoseo-cian-claro: #6fe3fb;
+  --jugoseo-texto-claro: #f1f5f7;
+  --jugoseo-texto-tenue: #a9b2b8;
+  --jugoseo-borde: rgba(34, 195, 230, 0.25);
+  --jugoseo-fuente: 'Poppins', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  font-family: var(--jugoseo-fuente);
+  background-color: var(--jugoseo-fondo-oscuro-2);
+}
+
+/* ---------- Navbar ---------- */
+
+.jugoseo-navbar {
+  background-color: var(--jugoseo-fondo-oscuro);
+  border-bottom: 1px solid var(--jugoseo-borde);
+  padding-top: 0.85rem;
+  padding-bottom: 0.85rem;
+}
+
+.jugoseo-brand {
+  font-weight: 700;
+  font-size: 1.4rem;
+  letter-spacing: 0.5px;
+  color: var(--jugoseo-cian) !important;
+  text-shadow: 0 0 12px rgba(34, 195, 230, 0.55);
+}
+
+.jugoseo-brand-dot {
+  color: var(--jugoseo-texto-claro);
+  font-weight: 500;
+  text-shadow: none;
+}
+
+.jugoseo-navbar .nav-link {
+  color: var(--jugoseo-texto-claro);
+  font-weight: 500;
+  padding: 0.5rem 0.9rem;
+  border-radius: 6px;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.jugoseo-navbar .nav-link:hover,
+.jugoseo-navbar .nav-link:focus {
+  color: var(--jugoseo-cian-claro);
+  background-color: rgba(34, 195, 230, 0.08);
+}
+
+.jugoseo-navbar .nav-link.active {
+  color: var(--jugoseo-fondo-oscuro);
+  background-color: var(--jugoseo-cian);
+}
+
+/* ---------- Botón de login ---------- */
+
+.jugoseo-btn-login {
+  background-color: var(--jugoseo-cian);
+  color: var(--jugoseo-fondo-oscuro);
+  font-weight: 600;
+  border: none;
+  padding: 0.5rem 1.4rem;
+  border-radius: 8px;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.jugoseo-btn-login:hover {
+  background-color: var(--jugoseo-cian-claro);
+  color: var(--jugoseo-fondo-oscuro);
+  transform: translateY(-1px);
+}
+
+/* ---------- Modal de login ---------- */
+
+.jugoseo-modal {
+  background-color: var(--jugoseo-fondo-oscuro);
+  border: 1px solid var(--jugoseo-borde);
+  color: var(--jugoseo-texto-claro);
+  border-radius: 12px;
+}
+
+.jugoseo-modal-title {
+  color: var(--jugoseo-cian);
+  font-weight: 600;
+}
+
+.jugoseo-input {
+  background-color: var(--jugoseo-fondo-oscuro-2);
+  border: 1px solid var(--jugoseo-borde);
+  color: var(--jugoseo-texto-claro);
+}
+
+.jugoseo-input:focus {
+  background-color: var(--jugoseo-fondo-oscuro-2);
+  border-color: var(--jugoseo-cian);
+  color: var(--jugoseo-texto-claro);
+  box-shadow: 0 0 0 0.2rem rgba(34, 195, 230, 0.25);
+}
+
+.jugoseo-modal-footer-text {
+  color: var(--jugoseo-texto-tenue);
+  font-size: 0.9rem;
+}
+
+.jugoseo-link {
+  color: var(--jugoseo-cian);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.jugoseo-link:hover {
+  color: var(--jugoseo-cian-claro);
+  text-decoration: underline;
+}
+
+/* ---------- Hero de ejemplo (solo para previsualizar contraste) ---------- */
+
+.jugoseo-hero {
+  height: 45vh;
+  background: radial-gradient(circle at center, rgba(34,195,230,0.15), var(--jugoseo-fondo-oscuro-2) 70%);
+}
+
+.jugoseo-hero-title {
+  color: var(--jugoseo-cian);
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-shadow: 0 0 25px rgba(34, 195, 230, 0.6);
+}
+
+/* =========================================================
+   Reproductor fijo (fixed-bottom)
+   ========================================================= */
+
+.jugoseo-player {
+  background-color: var(--jugoseo-fondo-oscuro);
+  border-top: 1px solid var(--jugoseo-borde);
+  padding: 0.6rem 1rem;
+  z-index: 1040; /* por encima del contenido, por debajo de modales */
+}
+
+.jugoseo-player-cover {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--jugoseo-cian), var(--jugoseo-fondo-oscuro-2));
+  flex-shrink: 0;
+}
+
+.jugoseo-player-info .titulo {
+  color: var(--jugoseo-texto-claro);
+  font-weight: 600;
+  font-size: 0.9rem;
+  line-height: 1.1;
+}
+
+.jugoseo-player-info .subtitulo {
+  color: var(--jugoseo-texto-tenue);
+  font-size: 0.78rem;
+}
+
+.jugoseo-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #ff4d4d;
+  display: inline-block;
+  margin-right: 5px;
+  animation: jugoseo-pulse 1.4s infinite;
+}
+
+@keyframes jugoseo-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.6); }
+  70%  { box-shadow: 0 0 0 7px rgba(255, 77, 77, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0); }
+}
+
+.jugoseo-btn-play {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--jugoseo-cian);
+  color: var(--jugoseo-fondo-oscuro);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.jugoseo-btn-play:hover {
+  background-color: var(--jugoseo-cian-claro);
+  transform: scale(1.05);
+}
+
+.jugoseo-volume {
+  accent-color: var(--jugoseo-cian);
+  width: 90px;
+}
+
+/*
+  Layout de app.html con flexbox: el navbar (fixed-top) y el player
+  (fixed-bottom) quedan fuera del flujo, y este contenedor ocupa
+  todo el alto de pantalla, dejando padding para no quedar tapado
+  por ninguno de los dos. El iframe se estira para llenar todo el
+  espacio disponible entre navbar y player.
+*/
+body.jugoseo-shell-body {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;    /* alto fijo: la página nunca scrollea completa */
+  overflow: hidden;  /* si algo se desborda, scrollea DENTRO del iframe, no la página */
+}
+
+.jugoseo-app-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding-top: 70px;   /* alto del navbar fijo */
+  padding-bottom: 64px; /* alto aproximado del player fijo */
+  background-color: var(--jugoseo-fondo-oscuro-2);
+}
+
+.jugoseo-frame-wrap {
+  flex: 1;
+  min-height: 0;
+}
+
+.jugoseo-frame-wrap iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background-color: var(--jugoseo-fondo-oscuro-2);
+}
+
+
+/* =========================================================
+   Contenido de las páginas internas (cargadas en el iframe)
+   ========================================================= */
+
+.pagina-interna {
+  padding: 2.5rem 1.5rem;
+  color: var(--jugoseo-texto-claro);
+  min-height: 100%;
+}
+
+.pagina-titulo {
+  color: var(--jugoseo-cian);
+  font-weight: 700;
+  margin-bottom: 1.8rem;
+  text-shadow: 0 0 14px rgba(34, 195, 230, 0.35);
+}
+
+/* Tarjetas genéricas (tienda, noticias, programas) */
+.jugoseo-card {
+  background-color: var(--jugoseo-fondo-oscuro);
+  border: 1px solid var(--jugoseo-borde);
+  border-radius: 12px;
+  padding: 1.4rem;
+  height: 100%;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.jugoseo-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--jugoseo-cian);
+}
+
+.jugoseo-card-img {
+  width: 100%;
+  height: 160px; /* o el alto que ya tenías */
+  object-fit: cover;
+  border-radius: 8px;
+}
+.jugoseo-card-titulo {
+  color: var(--jugoseo-texto-claro);
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.jugoseo-card-precio {
+  color: var(--jugoseo-cian);
+  font-weight: 700;
+}
+
+.jugoseo-card-texto {
+  color: var(--jugoseo-texto-tenue);
+  font-size: 0.9rem;
+}
+
+.jugoseo-badge {
+  background-color: rgba(34, 195, 230, 0.12);
+  color: var(--jugoseo-cian-claro);
+  border: 1px solid var(--jugoseo-borde);
+  font-weight: 600;
+  font-size: 0.72rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+}
+
+/* Tabla de programación */
+.jugoseo-tabla-programas {
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--jugoseo-texto-claro);
+  --bs-table-color-state: var(--jugoseo-texto-claro);
+  color: var(--jugoseo-texto-claro);
+}
+
+.jugoseo-tabla-programas th {
+  color: var(--jugoseo-cian);
+  border-bottom: 2px solid var(--jugoseo-borde);
+  font-weight: 600;
+}
+
+.jugoseo-tabla-programas td {
+  color: var(--jugoseo-texto-claro);
+  border-color: var(--jugoseo-borde);
+  vertical-align: middle;
+}
+
+/* Formulario de contacto */
+.jugoseo-form-label {
+  color: var(--jugoseo-texto-tenue);
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.jugoseo-form-error {
+  color: #ff6b6b;
+  font-size: 0.85rem;
+}
+
+.jugoseo-contador-excedido {
+  color: #ff6b6b !important;
+  font-weight: 600;
+}
+
+/* =========================================================
+   Landing (index.html) — logo, carrusel, sin menú
+   ========================================================= */
+
+.jugoseo-landing-body {
+  padding-bottom: 90px; /* deja espacio para el player fijo */
+}
+
+.jugoseo-landing-header {
+  padding: 4rem 1.5rem 2rem;
+  background: radial-gradient(circle at center, rgba(34,195,230,0.15), var(--jugoseo-fondo-oscuro-2) 70%);
+}
+
+.jugoseo-landing-logo {
+  font-family: var(--jugoseo-fuente);
+  font-weight: 700;
+  font-size: clamp(2.2rem, 6vw, 3.5rem);
+  letter-spacing: 1px;
+  color: var(--jugoseo-cian);
+  text-shadow: 0 0 25px rgba(34, 195, 230, 0.55);
+}
+
+.jugoseo-landing-tagline {
+  color: var(--jugoseo-texto-tenue);
+  margin: 0.5rem 0 1.75rem;
+}
+
+.jugoseo-carrusel-inner {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--jugoseo-borde);
+}
+
+.jugoseo-slide {
+  height: 320px;
+  display: flex;
+  align-items: flex-end;
+  padding: 2rem;
+}
+
+.jugoseo-slide-texto h2 {
+  color: #fff;
+  font-weight: 700;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+
+.jugoseo-slide-texto p {
+  color: rgba(255,255,255,0.9);
+  margin-bottom: 0;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+
+.jugoseo-slide-1 { background: linear-gradient(135deg, #0d0f12, #1a5f73, #22c3e6); }
+.jugoseo-slide-2 { background: linear-gradient(135deg, #0d0f12, #6e2a7a, #c23fc9); }
+.jugoseo-slide-3 { background: linear-gradient(135deg, #0d0f12, #1f6e4a, #2fd67d); }
+.jugoseo-slide-4 { background: linear-gradient(135deg, #0d0f12, #8a4b12, #f2a13a); }
+
+/* Saludo de usuario conectado (app.html) */
+.jugoseo-usuario-conectado {
+  color: var(--jugoseo-texto-tenue);
+  font-size: 0.9rem;
+}
+
+/* =========================================================
+   Panel Administrativo (admin.html)
+   ========================================================= */
+
+.jugoseo-admin-body {
+  background-color: var(--jugoseo-fondo-oscuro-2);
+  min-height: 100vh;
+}
+
+.jugoseo-admin-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.jugoseo-admin-sidebar {
+  width: 250px;
+  flex-shrink: 0;
+  background-color: var(--jugoseo-fondo-oscuro);
+  border-right: 1px solid var(--jugoseo-borde);
+  padding: 1.75rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.jugoseo-admin-brand {
+  font-size: 1.15rem;
+}
+
+.jugoseo-admin-subtitulo {
+  color: var(--jugoseo-texto-tenue);
+  font-size: 0.85rem;
+  margin-bottom: 0;
+}
+
+.jugoseo-admin-link {
+  color: var(--jugoseo-texto-claro) !important;
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.25rem;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.jugoseo-admin-link:hover {
+  background-color: rgba(34, 195, 230, 0.08);
+  color: var(--jugoseo-cian-claro) !important;
+}
+
+.jugoseo-admin-link.active {
+  background-color: var(--jugoseo-cian);
+  color: var(--jugoseo-fondo-oscuro) !important;
+  font-weight: 600;
+}
+
+.jugoseo-admin-contenido {
+  flex-grow: 1;
+  padding: 2.5rem;
+  overflow-y: auto;
+}
+
+.jugoseo-admin-stat {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--jugoseo-cian);
+}
+
+@media (max-width: 767.98px) {
+  .jugoseo-admin-layout {
+    flex-direction: column;
+  }
+  .jugoseo-admin-sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+  }
+}
+
+/* =========================================================
+   Chat en vivo (iframe externo, xat.com)
+   ========================================================= */
+
+.jugoseo-chat-wrapper {
+  border: 1px solid var(--jugoseo-borde);
+  border-radius: 14px;
+  overflow: hidden;
+  background-color: var(--jugoseo-fondo-oscuro);
+  box-shadow: 0 0 22px rgba(34, 195, 230, 0.12);
+}
+
+.jugoseo-chat-wrapper iframe {
+  display: block;
+  width: 100%;
+  height: 500px;
+  border: none;
+}
+
+@media (max-width: 575.98px) {
+  .jugoseo-chat-wrapper iframe {
+    height: 380px;
+  }
+}
+
+/* =========================================================
+   Tienda / Carrito
+   ========================================================= */
+
+.jugoseo-qty-input {
+  width: 70px;
+  text-align: center;
+}
+
+.jugoseo-cart-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background-color: #ff4d4d;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+.jugoseo-offcanvas {
+  background-color: var(--jugoseo-fondo-oscuro);
+  border-left: 1px solid var(--jugoseo-borde);
+  color: var(--jugoseo-texto-claro);
+  width: 380px;
+}
+
+.jugoseo-carrito-item {
+  border-bottom: 1px solid var(--jugoseo-borde);
+  padding: 0.75rem 0;
+}
+
+.jugoseo-carrito-resumen {
+  border-top: 1px solid var(--jugoseo-borde);
+}
+
+.jugoseo-btn-qty {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid var(--jugoseo-borde);
+  background-color: var(--jugoseo-fondo-oscuro-2);
+  color: var(--jugoseo-texto-claro);
+  line-height: 1;
+  font-weight: 700;
+  transition: border-color 0.2s ease;
+}
+
+.jugoseo-btn-qty:hover {
+  border-color: var(--jugoseo-cian);
+  color: var(--jugoseo-cian);
+}
+
+.jugoseo-qty-valor {
+  min-width: 20px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.jugoseo-btn-eliminar {
+  background: none;
+  border: none;
+  color: var(--jugoseo-texto-tenue);
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0.2rem 0.35rem;
+  transition: color 0.2s ease;
+}
+
+.jugoseo-btn-eliminar:hover {
+  color: #ff6b6b;
+}
+
+/* Toasts de notificación */
+.jugoseo-toast {
+  color: var(--jugoseo-texto-claro);
+  border-radius: 10px;
+}
+
+.jugoseo-toast-exito {
+  background-color: #1c8a5c;
+}
+
+.jugoseo-toast-error {
+  background-color: #b23b3b;
+}
+
+.jugoseo-toast-info {
+  background-color: var(--jugoseo-fondo-oscuro);
+  border: 1px solid var(--jugoseo-borde) !important;
+}
+
+/* Adaptación del carrusel original a React-Bootstrap */
+.jugoseo-carrusel .carousel-inner {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--jugoseo-borde);
+}
+
+/* Estructura interna de React, sin iframe */
+.jugoseo-interna {
+  min-height: 100vh;
+  background-color: var(--jugoseo-fondo-oscuro-2);
+}
+
+.jugoseo-interna-contenido {
+  padding-top: 110px;
+  padding-bottom: 90px;
+  color: var(--jugoseo-texto-claro);
+}
+
+.jugoseo-interna .nav-link.disabled {
+  opacity: 0.45;
+}
+
+/* Imágenes de las fichas de programas */
+.jugoseo-programa-detalle-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 600px;
+  object-fit: contain;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 8px;
+}
