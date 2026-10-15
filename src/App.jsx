@@ -15,6 +15,7 @@ import Programas from './components/Programas.jsx'
 import DetallePrograma from './components/DetallePrograma.jsx'
 import Noticias from './components/Noticias.jsx'
 import DetalleNoticia from './components/DetalleNoticia.jsx'
+import Tienda from './components/Tienda.jsx'
 
 export default function App() {
   return (
@@ -33,6 +34,11 @@ export default function App() {
             <Route
               path="inicio"
               element={<Inicio />}
+            />
+
+            <Route
+              path="tienda"
+              element={<Tienda />}
             />
 
             <Route

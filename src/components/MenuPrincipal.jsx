@@ -50,7 +50,11 @@ export default function MenuPrincipal({
               Inicio
             </Nav.Link>
 
-            <Nav.Link disabled title="Pendiente de migración">
+            <Nav.Link
+                as={NavLink}
+                to="/app/tienda"
+                onClick={cerrarMenu}
+            >
               Tienda
             </Nav.Link>
 
