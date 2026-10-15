@@ -2,8 +2,13 @@ import { useState } from 'react'
 
 import { formatearCLP } from '../utils/formatoMoneda.js'
 
-export default function ProductoCard({ producto }) {
+export default function ProductoCard({ 
+  producto,
+  agregarProducto,
+  bloqueado = false,
+}) {
   const [imagenFallida, setImagenFallida] = useState(false)
+  const [cantidad, setCantidad] = useState('1')
 
   const agotado = producto.stock === 0
   const pocasUnidades =
@@ -11,6 +16,17 @@ export default function ProductoCard({ producto }) {
 
   const rutaImagen =
     `${import.meta.env.BASE_URL}${producto.imagen.replace(/^\/+/, '')}`
+
+  function agregar() {
+    const agregado = agregarProducto(
+      producto.id,
+      Number(cantidad),
+    )
+
+    if (agregado) {
+      setCantidad('1')
+    }
+  }
 
   return (
     <article className="jugoseo-card d-flex flex-column h-100">
@@ -61,15 +77,20 @@ export default function ProductoCard({ producto }) {
         <input
           type="number"
           className="form-control jugoseo-input jugoseo-qty-input"
-          value={agotado ? 0 : 1}
-          disabled
+          min={1}
+          max={producto.stock}
+          step={1}
+          value={agotado ? '0' : cantidad}
+          onChange={(evento) => setCantidad(evento.target.value)}
+          disabled={agotado || bloqueado}
           aria-label={`Cantidad de ${producto.nombre}`}
         />
 
         <button
           type="button"
           className="btn jugoseo-btn-login flex-grow-1"
-          disabled
+          onClick={agregar}
+          disabled={agotado || bloqueado}
         >
           {agotado ? 'Sin stock' : 'Agregar'}
         </button>

@@ -645,3 +645,9 @@ body.jugoseo-shell-body {
   margin-right: auto;
   border-radius: 8px;
 }
+
+/* Carrito lateral adaptable */
+.offcanvas.jugoseo-offcanvas {
+  --bs-offcanvas-width: 420px;
+  width: min(420px, 100vw);
+}
