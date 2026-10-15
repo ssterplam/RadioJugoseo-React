@@ -13,6 +13,8 @@ import Registro from './components/Registro.jsx'
 import Contacto from './components/Contacto.jsx'
 import Programas from './components/Programas.jsx'
 import DetallePrograma from './components/DetallePrograma.jsx'
+import Noticias from './components/Noticias.jsx'
+import DetalleNoticia from './components/DetalleNoticia.jsx'
 
 export default function App() {
   return (
@@ -46,6 +48,16 @@ export default function App() {
             <Route
               path="programas/:programaId"
               element={<DetallePrograma />}
+            />
+
+            <Route
+              path="noticias"
+              element={<Noticias />}
+            />
+
+            <Route
+              path="noticias/:noticiaId"
+              element={<DetalleNoticia />}
             />
           </Route>
         </Route>
