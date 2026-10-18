@@ -6,6 +6,8 @@ export default function CarritoPanel({
   mostrar,
   cerrar,
   items,
+  conflictos = {},
+  cambios = [],
   aviso,
   errorCarga,
   cambiarCantidad,
@@ -13,6 +15,8 @@ export default function CarritoPanel({
   vaciarCarrito,
   irAPagar,
 }) {
+  const hayConflictos = Object.keys(conflictos).length > 0
+
   const total = items.reduce(
     (acumulado, item) =>
       acumulado + item.precio * item.cantidad,
@@ -53,6 +57,20 @@ export default function CarritoPanel({
           </div>
         )}
 
+        {cambios.length > 0 && (
+          <div className="alert alert-warning" role="status">
+            <p className="mb-2">
+              Revisa las actualizaciones del carrito:
+            </p>
+
+            <ul className="mb-0">
+              {cambios.map((cambio) => (
+                <li key={cambio}>{cambio}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {errorCarga && (
           <div className="alert alert-danger" role="alert">
             {errorCarga}
@@ -66,65 +84,82 @@ export default function CarritoPanel({
             </p>
           )}
 
-          {items.map((item) => (
-            <div
-              className="jugoseo-carrito-item"
-              key={item.id}
-            >
-              <div className="jugoseo-card-titulo">
-                {item.nombre}
-              </div>
+          {items.map((item) => {
+            const conflicto = conflictos[item.id]
 
-              <div className="jugoseo-card-texto">
-                {formatearCLP(item.precio)} c/u
-              </div>
+            return (
+              <div
+                className="jugoseo-carrito-item"
+                key={item.id}
+              >
+                <div className="jugoseo-card-titulo">
+                  {item.nombre}
+                </div>
 
-              <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-2">
-                <div className="d-flex align-items-center gap-2">
-                  <button
-                    type="button"
-                    className="jugoseo-btn-qty"
-                    onClick={() => cambiarCantidad(item.id, -1)}
-                    aria-label={`Restar una unidad de ${item.nombre}`}
-                  >
-                    −
-                  </button>
+                <div className="jugoseo-card-texto">
+                  {formatearCLP(item.precio)} c/u
+                </div>
 
-                  <span className="jugoseo-qty-valor">
-                    {item.cantidad}
+                {conflicto && (
+                  <p className="text-warning small mt-2 mb-0">
+                    {conflicto}
+                  </p>
+                )}
+
+                <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-2">
+                  <div className="d-flex align-items-center gap-2">
+                    <button
+                      type="button"
+                      className="jugoseo-btn-qty"
+                      onClick={() => cambiarCantidad(item.id, -1)}
+                      disabled={Boolean(errorCarga)}
+                      aria-label={`Restar una unidad de ${item.nombre}`}
+                    >
+                      −
+                    </button>
+
+                    <span className="jugoseo-qty-valor">
+                      {item.cantidad}
+                    </span>
+
+                    <button
+                      type="button"
+                      className="jugoseo-btn-qty"
+                      onClick={() => cambiarCantidad(item.id, 1)}
+                      disabled={
+                        Boolean(errorCarga) || Boolean(conflicto)
+                      }
+                      aria-label={`Sumar una unidad de ${item.nombre}`}
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  <span className="jugoseo-card-precio">
+                    {formatearCLP(item.precio * item.cantidad)}
                   </span>
 
                   <button
                     type="button"
-                    className="jugoseo-btn-qty"
-                    onClick={() => cambiarCantidad(item.id, 1)}
-                    aria-label={`Sumar una unidad de ${item.nombre}`}
+                    className="jugoseo-btn-eliminar"
+                    onClick={() => eliminarProducto(item.id)}
+                    disabled={Boolean(errorCarga)}
+                    aria-label={`Eliminar ${item.nombre}`}
                   >
-                    +
+                    ✕
                   </button>
                 </div>
-
-                <span className="jugoseo-card-precio">
-                  {formatearCLP(item.precio * item.cantidad)}
-                </span>
-
-                <button
-                  type="button"
-                  className="jugoseo-btn-eliminar"
-                  onClick={() => eliminarProducto(item.id)}
-                  aria-label={`Eliminar ${item.nombre}`}
-                >
-                  ✕
-                </button>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         <div className="jugoseo-carrito-resumen mt-3 pt-3">
           <div className="d-flex justify-content-between align-items-center mb-3">
             <span className="jugoseo-card-titulo">
-              Total
+              {hayConflictos || errorCarga
+                ? 'Total provisional'
+                : 'Total'}
             </span>
 
             <span className="jugoseo-card-precio fs-5">
@@ -132,11 +167,19 @@ export default function CarritoPanel({
             </span>
           </div>
 
+          {hayConflictos && (
+            <p className="jugoseo-card-texto">
+              Ajusta o quita los artículos señalados antes
+              de continuar. Las cantidades no se modificaron
+              automáticamente.
+            </p>
+          )}
+
           <button
             type="button"
             className="btn jugoseo-btn-login w-100 mb-2"
             onClick={irAPagar}
-            disabled={Boolean(errorCarga)}
+            disabled={Boolean(errorCarga) || hayConflictos}
           >
             Ir a pagar
           </button>
@@ -147,7 +190,9 @@ export default function CarritoPanel({
             onClick={vaciarCarrito}
             disabled={!errorCarga && items.length === 0}
           >
-            {errorCarga ? 'Reiniciar carrito guardado' : 'Vaciar carrito'}
+            {errorCarga
+              ? 'Vaciar o reiniciar carrito'
+              : 'Vaciar carrito'}
           </button>
         </div>
       </Offcanvas.Body>

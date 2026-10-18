@@ -1,118 +1,147 @@
-import { useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from 'react'
 
 import ProductoCard from './ProductoCard.jsx'
 import CarritoPanel from './CarritoPanel.jsx'
 
-import {
-  esProductoValido,
-  obtenerProductos,
-} from '../utils/productosStorage.js'
+import { guardarCarrito } from '../utils/carritoStorage.js'
 
 import {
-  obtenerCarrito,
-  guardarCarrito,
-} from '../utils/carritoStorage.js'
+  leerEstadoTienda,
+  reconciliarCarrito,
+} from '../utils/sincronizarCarrito.js'
 
-function cargarCatalogo() {
-  try {
-    const productos = obtenerProductos()
-    const identificadores = new Set()
-    const validos = []
-
-    for (const producto of productos) {
-      if (
-        esProductoValido(producto) &&
-        !identificadores.has(producto.id)
-      ) {
-        identificadores.add(producto.id)
-        validos.push(producto)
-      }
-    }
-
-    return {
-      productos: validos,
-      omitidos: productos.length - validos.length,
-      error: '',
-    }
-  } catch {
-    return {
-      productos: [],
-      omitidos: 0,
-      error:
-        'No se pudo cargar el catálogo. Revisa el almacenamiento ' +
-        'del navegador y los datos guardados. No se reemplazaron tus datos.',
-    }
-  }
+function rechazarOperacion(mensaje) {
+  const error = new Error(mensaje)
+  error.esAvisoTienda = true
+  throw error
 }
-
-function cargarCarritoInicial() {
-  try {
-    return {
-      items: obtenerCarrito(),
-      error: '',
-    }
-  } catch {
-    return {
-      items: [],
-      error:
-        'No se pudo leer el carrito guardado. No se modificaron sus datos. ' +
-        'Puedes reiniciarlo mediante el botón del panel.',
-    }
-  }
-}
-
-function buscarProductoActual(id) {
-  const producto = obtenerProductos().find(
-    (item) => item?.id === id,
-  )
-
-  if (!esProductoValido(producto)) {
-    throw new Error(
-      'El producto ya no está disponible o contiene datos inválidos.',
-    )
-  }
-
-  return producto
-}
-
-/*
-El estado está en Tienda porque esta coordina las tarjetas, el contador y el panel. 
-Los componentes hijos reciben la información y las funciones necesarias para trabajar sobre un único carrito, en vez de mantener copias independientes.
-Este patrón consiste en elevar el estado al padre compartido.
-*/
 
 export default function Tienda() {
-  const [catalogo] = useState(cargarCatalogo)
-  const [estadoCarrito, setEstadoCarrito] = useState(cargarCarritoInicial)
+  const [estado, setEstado] = useState(leerEstadoTienda)
   const [mostrarCarrito, setMostrarCarrito] = useState(false)
   const [aviso, setAviso] = useState(null)
 
-  const carrito = estadoCarrito.items
+  const aplicarEstado = useCallback((nuevoEstado) => {
+    setEstado((anterior) => ({
+      ...nuevoEstado,
+      cambios: [
+        ...new Set([
+          ...anterior.cambios,
+          ...nuevoEstado.cambios,
+        ]),
+      ],
+    }))
+  }, [])
+
+  const sincronizar = useCallback(() => {
+    let siguiente = leerEstadoTienda()
+
+    if (
+      !siguiente.errorCatalogo &&
+      !siguiente.errorCarrito &&
+      siguiente.requiereGuardado
+    ) {
+      try {
+        guardarCarrito(siguiente.items)
+
+        siguiente = {
+          ...siguiente,
+          requiereGuardado: false,
+        }
+      } catch {
+        siguiente = {
+          ...siguiente,
+          errorCarrito:
+            'No se pudo guardar la actualización del carrito. Inténtalo nuevamente.',
+        }
+      }
+    }
+
+    aplicarEstado(siguiente)
+    return siguiente
+  }, [aplicarEstado])
+
+  useEffect(() => {
+    function actualizarDesdeOtraPestana(evento) {
+      if (
+        evento.key === 'jugoseoProductos' ||
+        evento.key === 'jugoseoCarrito' ||
+        evento.key === null
+      ) {
+        sincronizar()
+      }
+    }
+
+    window.addEventListener('focus', sincronizar)
+    window.addEventListener(
+      'storage',
+      actualizarDesdeOtraPestana,
+    )
+
+    sincronizar()
+
+    return () => {
+      window.removeEventListener('focus', sincronizar)
+      window.removeEventListener(
+        'storage',
+        actualizarDesdeOtraPestana,
+      )
+    }
+  }, [sincronizar])
+
+  const carrito = estado.items
 
   const totalUnidades = carrito.reduce(
-    (acumulado, item) => acumulado + item.cantidad,
+    (total, item) => total + item.cantidad,
     0,
   )
+
+  const errorCarga =
+    estado.errorCatalogo || estado.errorCarrito
 
   function notificar(texto, tipo = 'info') {
     setAviso({ texto, tipo })
   }
 
-  function persistir(nuevosItems, mensaje) {
-    try {
-      guardarCarrito(nuevosItems)
+  function ejecutarOperacion(transformar, mensaje) {
+    const base = sincronizar()
 
-      setEstadoCarrito({
-        items: nuevosItems,
-        error: '',
+    if (base.errorCatalogo || base.errorCarrito) {
+      notificar(
+        'No se pudo comprobar el carrito. Inténtalo nuevamente.',
+        'danger',
+      )
+      return false
+    }
+
+    try {
+      const nuevosItems = transformar(base)
+
+      const resultado = reconciliarCarrito(
+        nuevosItems,
+        base.productos,
+      )
+
+      guardarCarrito(resultado.items)
+
+      aplicarEstado({
+        ...base,
+        ...resultado,
+        cambios: [...base.cambios, ...resultado.cambios],
+        requiereGuardado: false,
       })
 
       notificar(mensaje, 'success')
       return true
-    } catch {
+    } catch (error) {
       notificar(
-        'No se pudo guardar el cambio. El carrito no se modificó. ' +
-          'Revisa el almacenamiento del navegador.',
+        error.esAvisoTienda
+          ? error.message
+          : 'No se pudo guardar el cambio. Inténtalo nuevamente.',
         'danger',
       )
       return false
@@ -120,135 +149,170 @@ export default function Tienda() {
   }
 
   function agregarProducto(id, cantidad) {
-    if (estadoCarrito.error) {
-      notificar('Primero debes resolver el error del carrito.', 'danger')
-      return false
-    }
-
-    if (!Number.isInteger(cantidad) || cantidad < 1) {
-      notificar('Ingresa una cantidad entera mayor o igual a 1.', 'danger')
-      return false
-    }
-
-    try {
-      const producto = buscarProductoActual(id)
-      const existente = carrito.find((item) => item.id === id)
-      const cantidadActual = existente?.cantidad || 0
-
-      if (cantidadActual + cantidad > producto.stock) {
-        notificar(
-          `El stock de "${producto.nombre}" es ${producto.stock}. ` +
-            `Ya tienes ${cantidadActual} unidades en el carrito.`,
-          'danger',
+    return ejecutarOperacion((base) => {
+      if (!Number.isSafeInteger(cantidad) || cantidad < 1) {
+        rechazarOperacion(
+          'Ingresa una cantidad entera mayor o igual a 1.',
         )
-        return false
       }
 
-      const nuevosItems = existente
-        ? carrito.map((item) =>
-            item.id === id
-              ? {
-                  ...item,
-                  cantidad: item.cantidad + cantidad,
-                }
-              : item,
-          )
-        : [
-            ...carrito,
-            {
-              id: producto.id,
-              nombre: producto.nombre,
-              precio: producto.precio,
-              cantidad,
-            },
-          ]
+      const producto = base.productos.find(
+        (item) => item.id === id,
+      )
 
-      return persistir(
-        nuevosItems,
-        `"${producto.nombre}" se agregó al carrito.`,
+      if (!producto) {
+        rechazarOperacion('El producto no está disponible.')
+      }
+
+      const existente = base.items.find(
+        (item) => item.id === id,
       )
-    } catch {
-      notificar(
-        'No se pudo comprobar el producto y su stock. ' +
-          'Vuelve a entrar a Tienda y revisa el catálogo.',
-        'danger',
-      )
-      return false
-    }
+
+      const nuevaCantidad =
+        (existente?.cantidad || 0) + cantidad
+
+      if (
+        !Number.isSafeInteger(nuevaCantidad) ||
+        nuevaCantidad > producto.stock
+      ) {
+        rechazarOperacion(
+          `Hay ${producto.stock} unidades disponibles de "${producto.nombre}".`,
+        )
+      }
+
+      if (existente) {
+        return base.items.map((item) =>
+          item.id === id
+            ? { ...item, cantidad: nuevaCantidad }
+            : item,
+        )
+      }
+
+      return [
+        ...base.items,
+        {
+          id: producto.id,
+          nombre: producto.nombre,
+          precio: producto.precio,
+          cantidad,
+        },
+      ]
+    }, 'Producto agregado al carrito.')
   }
 
   function cambiarCantidad(id, delta) {
-    const item = carrito.find((producto) => producto.id === id)
-
-    if (!item) {
-      return
-    }
-
-    const nuevaCantidad = item.cantidad + delta
-
-    if (nuevaCantidad < 1) {
-      eliminarProducto(id)
-      return
-    }
-
-    if (delta > 0) {
-      try {
-        const producto = buscarProductoActual(id)
-
-        if (nuevaCantidad > producto.stock) {
-          notificar(
-            `Solo hay ${producto.stock} unidades disponibles de "${producto.nombre}".`,
-            'danger',
-          )
-          return
-        }
-      } catch {
-        notificar(
-          'No se pudo comprobar el stock. Puedes quitar unidades ' +
-            'o eliminar el producto, pero no agregar más.',
-          'danger',
-        )
-        return
+    ejecutarOperacion((base) => {
+      if (![1, -1].includes(delta)) {
+        rechazarOperacion('Operación no válida.')
       }
-    }
 
-    persistir(
-      carrito.map((producto) =>
+      const item = base.items.find(
+        (producto) => producto.id === id,
+      )
+
+      if (!item) {
+        rechazarOperacion('El artículo ya no está en el carrito.')
+      }
+
+      const nuevaCantidad = item.cantidad + delta
+
+      if (nuevaCantidad < 1) {
+        return base.items.filter(
+          (producto) => producto.id !== id,
+        )
+      }
+
+      if (delta > 0) {
+        const producto = base.productos.find(
+          (productoActual) => productoActual.id === id,
+        )
+
+        if (
+          !producto ||
+          !Number.isSafeInteger(nuevaCantidad) ||
+          nuevaCantidad > producto.stock
+        ) {
+          rechazarOperacion(
+            'No hay disponibilidad para aumentar la cantidad.',
+          )
+        }
+      }
+
+      return base.items.map((producto) =>
         producto.id === id
           ? { ...producto, cantidad: nuevaCantidad }
           : producto,
-      ),
-      'Cantidad actualizada.',
-    )
+      )
+    }, 'Cantidad actualizada.')
   }
 
   function eliminarProducto(id) {
-    persistir(
-      carrito.filter((item) => item.id !== id),
+    ejecutarOperacion(
+      (base) =>
+        base.items.filter((item) => item.id !== id),
       'Producto eliminado del carrito.',
     )
   }
 
   function vaciarCarrito() {
-    if (estadoCarrito.error) {
-      const confirmado = window.confirm(
-        'Esto reemplazará únicamente el carrito guardado por uno vacío. ' +
-          'No eliminará usuarios ni productos. ¿Continuar?',
+    if (
+      estado.errorCarrito &&
+      !window.confirm(
+        '¿Reiniciar únicamente el carrito guardado? ' +
+          'No se eliminarán usuarios ni productos.',
       )
-
-      if (!confirmado) {
-        return
-      }
+    ) {
+      return
     }
 
-    persistir([], 'Carrito vaciado.')
+    try {
+      guardarCarrito([])
+      sincronizar()
+      notificar('Carrito vaciado.', 'success')
+    } catch {
+      notificar(
+        'No se pudo vaciar el carrito. Inténtalo nuevamente.',
+        'danger',
+      )
+    }
+  }
+
+  function abrirCarrito() {
+    sincronizar()
+    setMostrarCarrito(true)
   }
 
   function irAPagar() {
-    if (carrito.length === 0) {
+    const actual = sincronizar()
+
+    if (actual.errorCatalogo || actual.errorCarrito) {
+      notificar(
+        'No se pudo comprobar el carrito. Inténtalo nuevamente.',
+        'danger',
+      )
+      return
+    }
+
+    if (actual.items.length === 0) {
       notificar(
         'Debes agregar productos al carrito antes de continuar.',
         'danger',
+      )
+      return
+    }
+
+    if (Object.keys(actual.conflictos).length > 0) {
+      notificar(
+        'Revisa los artículos no disponibles o sus cantidades.',
+        'danger',
+      )
+      return
+    }
+
+    if (actual.cambios.length > 0) {
+      notificar(
+        'El carrito fue actualizado. Revisa los cambios antes de continuar.',
+        'warning',
       )
       return
     }
@@ -278,7 +342,7 @@ export default function Tienda() {
           <button
             type="button"
             className="btn jugoseo-btn-login position-relative"
-            onClick={() => setMostrarCarrito(true)}
+            onClick={abrirCarrito}
           >
             🛒 Ver carrito
 
@@ -299,54 +363,66 @@ export default function Tienda() {
           </div>
         )}
 
-        {estadoCarrito.error && (
-          <div className="alert alert-danger" role="alert">
-            {estadoCarrito.error}
+        {estado.cambios.length > 0 && (
+          <div className="alert alert-warning" role="status">
+            <p className="mb-2">
+              Se detectaron cambios en los artículos del carrito:
+            </p>
+
+            <ul className="mb-0">
+              {estado.cambios.map((cambio) => (
+                <li key={cambio}>{cambio}</li>
+              ))}
+            </ul>
           </div>
         )}
 
-        {catalogo.error ? (
+        {errorCarga && (
           <div className="alert alert-danger" role="alert">
-            {catalogo.error}
+            {errorCarga}
           </div>
-        ) : (
-          <>
-            {catalogo.omitidos > 0 && (
-              <div className="alert alert-warning" role="status">
-                Se omitieron {catalogo.omitidos} productos con
-                datos inválidos o identificadores repetidos.
-              </div>
-            )}
+        )}
 
-            <div className="row g-4">
-              {catalogo.productos.length === 0 ? (
-                <p className="jugoseo-card-texto text-center py-4">
-                  No hay productos disponibles por el momento.
-                </p>
-              ) : (
-                catalogo.productos.map((producto) => (
-                  <div
-                    className="col-sm-6 col-lg-4 col-xl-3"
-                    key={producto.id}
-                  >
-                    <ProductoCard
-                      producto={producto}
-                      agregarProducto={agregarProducto}
-                      bloqueado={Boolean(estadoCarrito.error)}
-                    />
-                  </div>
-                ))
-              )}
-            </div>
-          </>
+        {estado.errorCatalogo ? (
+          <button
+            type="button"
+            className="btn btn-outline-light"
+            onClick={() => sincronizar()}
+          >
+            Reintentar
+          </button>
+        ) : (
+          <div className="row g-4">
+            {estado.productos.length === 0 ? (
+              <p className="jugoseo-card-texto text-center py-4">
+                No hay productos disponibles por el momento.
+              </p>
+            ) : (
+              estado.productos.map((producto) => (
+                <div
+                  className="col-sm-6 col-lg-4 col-xl-3"
+                  key={producto.id}
+                >
+                  <ProductoCard
+                    key={`${producto.id}-${producto.imagen}`}
+                    producto={producto}
+                    agregarProducto={agregarProducto}
+                    bloqueado={Boolean(errorCarga)}
+                  />
+                </div>
+              ))
+            )}
+          </div>
         )}
 
         <CarritoPanel
           mostrar={mostrarCarrito}
           cerrar={() => setMostrarCarrito(false)}
           items={carrito}
+          conflictos={estado.conflictos}
+          cambios={estado.cambios}
           aviso={aviso}
-          errorCarga={estadoCarrito.error}
+          errorCarga={errorCarga}
           cambiarCantidad={cambiarCantidad}
           eliminarProducto={eliminarProducto}
           vaciarCarrito={vaciarCarrito}
