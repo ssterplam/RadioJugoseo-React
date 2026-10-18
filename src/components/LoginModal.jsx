@@ -2,17 +2,12 @@ import { useState } from 'react'
 import Modal from 'react-bootstrap/Modal'
 import { usuariosDemo } from '../data/usuariosDemo.js'
 import { Link, useNavigate } from 'react-router-dom'
+import { esRolValido } from '../data/roles.js'
 
 const dominiosPermitidos = [
-  '@duoc.cl',
-  '@profesor.duoc.cl',
+  '@duocuc.cl',
   '@gmail.com',
-]
-
-const rolesPermitidos = [
-  'Cliente',
-  'Vendedor',
-  'Administrador',
+  '@jugoseo.com'
 ]
 
 export default function LoginModal({ mostrar, cerrar }) {
@@ -95,8 +90,11 @@ export default function LoginModal({ mostrar, cerrar }) {
 
       const rol = cuenta.rol || 'Cliente'
 
-      if (!rolesPermitidos.includes(rol)) {
-        setMensaje('La cuenta tiene un rol inválido')
+      if (!esRolValido(rol)) {
+        setMensaje(
+          'La cuenta tiene un rol no admitido. ' +
+            'Si utilizaba el rol Vendedor, debe ser reasignada por Administración.',
+        )
         return
       }
 

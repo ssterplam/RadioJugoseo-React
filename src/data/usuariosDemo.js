@@ -1,6 +1,6 @@
 export const usuariosDemo = [
   {
-    correo: 'cliente@duoc.cl',
+    correo: 'cliente@duocuc.cl',
     password: 'client123',
     nombre: 'Juan',
     apellido: 'Pérez',
@@ -8,11 +8,11 @@ export const usuariosDemo = [
     tipo: 'Socio VIP',
   },
   {
-    correo: 'vendedor@profesor.duoc.cl',
-    password: 'vendedor1',
+    correo: 'locutor@jugoseo.com',
+    password: 'locutor123',
     nombre: 'María',
     apellido: 'García',
-    rol: 'Vendedor',
+    rol: 'Locutor',
     tipo: null,
   },
   {

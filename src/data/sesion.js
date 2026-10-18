@@ -1,10 +1,6 @@
-const CLAVE_SESION = 'jugoseoUsuario'
+import { esRolValido } from './roles.js'
 
-const ROLES_VALIDOS = [
-  'Cliente',
-  'Vendedor',
-  'Administrador',
-]
+const CLAVE_SESION = 'jugoseoUsuario'
 
 export function leerSesion() {
   try {
@@ -22,7 +18,7 @@ export function leerSesion() {
       sesion.usuario.trim() !== '' &&
       typeof sesion.correo === 'string' &&
       sesion.correo.trim() !== '' &&
-      ROLES_VALIDOS.includes(sesion.rol)
+      esRolValido(sesion.rol)
 
     if (!esValida) {
       eliminarSesion()

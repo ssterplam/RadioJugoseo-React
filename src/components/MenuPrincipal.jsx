@@ -82,15 +82,23 @@ export default function MenuPrincipal({
               Contacto
             </Nav.Link>
 
-            {sesion.rol === 'Administrador' && (
-              <Nav.Link disabled title="Pendiente de migración">
-                Panel Admin
+            {['Locutor', 'Administrador'].includes(sesion.rol) && (
+              <Nav.Link
+                as={NavLink}
+                to="/app/locutor"
+                onClick={cerrarMenu}
+              >
+                Panel Locutor
               </Nav.Link>
             )}
 
-            {sesion.rol === 'Vendedor' && (
-              <Nav.Link disabled title="Pendiente de migración">
-                Panel Ventas
+            {sesion.rol === 'Administrador' && (
+              <Nav.Link
+                as={NavLink}
+                to="/app/admin"
+                onClick={cerrarMenu}
+              >
+                Panel Admin
               </Nav.Link>
             )}
           </Nav>
