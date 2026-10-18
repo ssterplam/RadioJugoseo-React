@@ -19,6 +19,7 @@ import DetalleNoticia from './components/DetalleNoticia.jsx'
 import Tienda from './components/Tienda.jsx'
 import PanelProgramas from './components/PanelProgramas.jsx'
 import PanelAdmin from './components/PanelAdmin.jsx'
+import PanelProductos from './components/PanelProductos.jsx'
 
 export default function App() {
   return (
@@ -113,6 +114,11 @@ export default function App() {
                 <Route
                   path="programas"
                   element={<PanelProgramas permitirAltasBajas/>}
+                />
+
+                <Route
+                  path="productos"
+                  element={<PanelProductos />}
                 />
 
                 <Route
