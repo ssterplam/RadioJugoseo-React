@@ -22,6 +22,16 @@ const ESTADOS_CANCELABLES = [
   'Enviado',
 ]
 
+const SIGUIENTE_ESTADO = {
+  Pendiente: 'En preparación',
+  'En preparación': 'Enviado',
+  Enviado: 'Entregado',
+}
+
+export function obtenerSiguienteEstado(estado) {
+  return SIGUIENTE_ESTADO[estado] || null
+}
+
 function leerPedidosGuardados() {
   const texto = localStorage.getItem(CLAVE_PEDIDOS)
 
@@ -303,12 +313,6 @@ export function cambiarEstadoPedido(id, estado) {
     throw error
   }
 
-  if (!ESTADOS_PEDIDO.includes(estado)) {
-    const error = new Error('Estado no válido.')
-    error.codigo = 'ESTADO_INVALIDO'
-    throw error
-  }
-
   const {
     pedidos,
     pedido,
@@ -318,15 +322,24 @@ export function cambiarEstadoPedido(id, estado) {
     pedido.estado === 'Cancelado' ||
     pedido.estado === 'Entregado'
   ) {
-    const error = new Error(
-      'Este pedido ya está cerrado.',
-    )
+    const error = new Error('Este pedido ya está cerrado.')
     error.codigo = 'PEDIDO_CERRADO'
     throw error
   }
 
   if (estado === 'Cancelado') {
-    return cancelarPedido(id, '')
+    const resultado = cancelarPedido(id, '')
+    return resultado.pedidos
+  }
+
+  const siguiente = obtenerSiguienteEstado(pedido.estado)
+
+  if (!siguiente || estado !== siguiente) {
+    const error = new Error(
+      'El pedido solo puede avanzar al siguiente estado.',
+    )
+    error.codigo = 'TRANSICION_INVALIDA'
+    throw error
   }
 
   const actualizados = pedidos.map((item) =>
