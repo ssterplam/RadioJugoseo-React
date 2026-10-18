@@ -17,7 +17,7 @@ export default function MenuPrincipal({
 
   return (
     <Navbar
-      expand="lg"
+      expand="xl"
       fixed="top"
       variant="dark"
       className="jugoseo-navbar"
@@ -41,7 +41,7 @@ export default function MenuPrincipal({
         />
 
         <Navbar.Collapse id="navbarJugoseo">
-          <Nav className="mx-auto mb-2 mb-lg-0 gap-lg-2">
+          <Nav className="mx-auto mb-2 mb-xl-0 gap-xl-2">
             <Nav.Link
               as={NavLink}
               to="/app/inicio"
@@ -56,6 +56,14 @@ export default function MenuPrincipal({
                 onClick={cerrarMenu}
             >
               Tienda
+            </Nav.Link>
+
+            <Nav.Link
+                as={NavLink}
+                to="/app/pedidos"
+                onClick={cerrarMenu}
+            >
+              Mis Pedidos
             </Nav.Link>
 
             <Nav.Link 

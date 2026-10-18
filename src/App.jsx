@@ -21,6 +21,7 @@ import PanelProgramas from './components/PanelProgramas.jsx'
 import PanelAdmin from './components/PanelAdmin.jsx'
 import PanelProductos from './components/PanelProductos.jsx'
 import PanelUsuarios from './components/PanelUsuarios.jsx'
+import HistorialPedidos from './components/HistorialPedidos.jsx'
 
 export default function App() {
   return (
@@ -51,6 +52,11 @@ export default function App() {
             <Route
               path="tienda"
               element={<Tienda />}
+            />
+
+            <Route
+              path="pedidos"
+              element={<HistorialPedidos />}
             />
 
             <Route
