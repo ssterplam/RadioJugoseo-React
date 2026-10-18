@@ -27,7 +27,7 @@ export default function Portada() {
         </button>
       </header>
 
-      <main className="container my-4">
+      <main className="container my-4 jugoseo-portada-contenido">
         <CarruselInicio />
       </main>
 

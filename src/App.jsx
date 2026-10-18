@@ -27,139 +27,146 @@ import PanelPedidos from './components/PanelPedidos.jsx'
 export default function App() {
   return (
     <>
-      <Routes>
-        <Route path="/" element={<Portada />} />
+      <ReproductorRadio />
 
-        <Route
-          path="/registro"
-          element={<Registro />}
-        />
-
-        <Route element={<RutaProtegida />}>
+      <div className="jugoseo-vistas">
+        <Routes>
           <Route
-            path="/app"
-            element={<AplicacionInterna />}
-          >
-            <Route
-              index
-              element={<Navigate to="inicio" replace />}
-            />
+            path="/"
+            element={<Portada />}
+          />
 
-            <Route
-              path="inicio"
-              element={<Inicio />}
-            />
+          <Route
+            path="/registro"
+            element={<Registro />}
+          />
 
+          <Route element={<RutaProtegida />}>
             <Route
-              path="tienda"
-              element={<Tienda />}
-            />
-
-            <Route
-              path="pedidos"
-              element={<HistorialPedidos />}
-            />
-
-            <Route
-              path="contacto"
-              element={<Contacto />}
-            />
-
-            <Route
-              path="programas"
-              element={<Programas />}
-            />
-
-            <Route
-              path="programas/:programaId"
-              element={<DetallePrograma />}
-            />
-
-            <Route
-              path="noticias"
-              element={<Noticias />}
-            />
-
-            <Route
-              path="noticias/:noticiaId"
-              element={<DetalleNoticia />}
-            />
-
-            <Route
-              element={
-                <RutaPorRol
-                  permitidos={['Locutor', 'Administrador']}
-                />
-              }
+              path="/app"
+              element={<AplicacionInterna />}
             >
               <Route
-                path="locutor"
-                element={<PanelProgramas />}
+                index
+                element={<Navigate to="inicio" replace />}
               />
-            </Route>
 
-            <Route
-              element={
-                <RutaPorRol
-                  permitidos={['Administrador']}
-                />
-              }
-            >
               <Route
-                path="admin"
-                element={<PanelAdmin />}
+                path="inicio"
+                element={<Inicio />}
+              />
+
+              <Route
+                path="tienda"
+                element={<Tienda />}
+              />
+
+              <Route
+                path="pedidos"
+                element={<HistorialPedidos />}
+              />
+
+              <Route
+                path="contacto"
+                element={<Contacto />}
+              />
+
+              <Route
+                path="programas"
+                element={<Programas />}
+              />
+
+              <Route
+                path="programas/:programaId"
+                element={<DetallePrograma />}
+              />
+
+              <Route
+                path="noticias"
+                element={<Noticias />}
+              />
+
+              <Route
+                path="noticias/:noticiaId"
+                element={<DetalleNoticia />}
+              />
+
+              <Route
+                element={
+                  <RutaPorRol
+                    permitidos={['Locutor', 'Administrador']}
+                  />
+                }
               >
                 <Route
-                  index
-                  element={
-                    <Navigate
-                      to="programas"
-                      replace
-                    />
-                  }
+                  path="locutor"
+                  element={<PanelProgramas />}
                 />
+              </Route>
 
+              <Route
+                element={
+                  <RutaPorRol
+                    permitidos={['Administrador']}
+                  />
+                }
+              >
                 <Route
-                  path="programas"
-                  element={<PanelProgramas permitirAltasBajas/>}
-                />
+                  path="admin"
+                  element={<PanelAdmin />}
+                >
+                  <Route
+                    index
+                    element={
+                      <Navigate
+                        to="programas"
+                        replace
+                      />
+                    }
+                  />
 
-                <Route
-                  path="productos"
-                  element={<PanelProductos />}
-                />
+                  <Route
+                    path="programas"
+                    element={
+                      <PanelProgramas permitirAltasBajas />
+                    }
+                  />
 
-                <Route
-                  path="usuarios"
-                  element={<PanelUsuarios />}
-                />
+                  <Route
+                    path="productos"
+                    element={<PanelProductos />}
+                  />
 
-                <Route
-                  path="pedidos"
-                  element={<PanelPedidos />}
-                />
+                  <Route
+                    path="usuarios"
+                    element={<PanelUsuarios />}
+                  />
 
-                <Route
-                  path="*"
-                  element={
-                    <Navigate
-                      to="/app/admin/programas"
-                      replace
-                    />
-                  }
-                />
+                  <Route
+                    path="pedidos"
+                    element={<PanelPedidos />}
+                  />
+
+                  <Route
+                    path="*"
+                    element={
+                      <Navigate
+                        to="/app/admin/programas"
+                        replace
+                      />
+                    }
+                  />
+                </Route>
               </Route>
             </Route>
           </Route>
-        </Route>
 
-        <Route
-          path="*"
-          element={<Navigate to="/" replace />}
-        />
-      </Routes>
-
-      <ReproductorRadio />
+          <Route
+            path="*"
+            element={<Navigate to="/" replace />}
+          />
+        </Routes>
+      </div>
     </>
   )
 }

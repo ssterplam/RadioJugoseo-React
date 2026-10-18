@@ -1,7 +1,5 @@
 /* =========================================================
-   styles.css — Estilos de marca Jugoseo.com
-   Aquí se centralizan los colores y detalles visuales
-   para no tocar el HTML cuando se quiera ajustar el estilo.
+   Radio Jugoseo — Estilos generales
    ========================================================= */
 
 :root {
@@ -13,6 +11,7 @@
   --jugoseo-texto-tenue: #a9b2b8;
   --jugoseo-borde: rgba(34, 195, 230, 0.25);
   --jugoseo-fuente: 'Poppins', system-ui, -apple-system, sans-serif;
+  --jugoseo-player-alto: 132px;
 }
 
 body {
@@ -20,9 +19,35 @@ body {
   background-color: var(--jugoseo-fondo-oscuro-2);
 }
 
-/* ---------- Navbar ---------- */
+/* =========================================================
+   Estructura de React
+   ========================================================= */
+
+.jugoseo-vistas {
+  padding-top: var(--jugoseo-player-alto);
+}
+
+.jugoseo-interna {
+  min-height: 100vh;
+  background-color: var(--jugoseo-fondo-oscuro-2);
+}
+
+.jugoseo-interna-contenido {
+  padding-top: 110px;
+  padding-bottom: 2rem;
+  color: var(--jugoseo-texto-claro);
+}
+
+.jugoseo-interna .nav-link.disabled {
+  opacity: 0.45;
+}
+
+/* =========================================================
+   Menú de navegación
+   ========================================================= */
 
 .jugoseo-navbar {
+  top: var(--jugoseo-player-alto);
   background-color: var(--jugoseo-fondo-oscuro);
   border-bottom: 1px solid var(--jugoseo-borde);
   padding-top: 0.85rem;
@@ -48,7 +73,9 @@ body {
   font-weight: 500;
   padding: 0.5rem 0.9rem;
   border-radius: 6px;
-  transition: color 0.2s ease, background-color 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .jugoseo-navbar .nav-link:hover,
@@ -62,7 +89,14 @@ body {
   background-color: var(--jugoseo-cian);
 }
 
-/* ---------- Botón de login ---------- */
+.jugoseo-usuario-conectado {
+  color: var(--jugoseo-texto-tenue);
+  font-size: 0.9rem;
+}
+
+/* =========================================================
+   Botones y enlaces
+   ========================================================= */
 
 .jugoseo-btn-login {
   background-color: var(--jugoseo-cian);
@@ -71,7 +105,9 @@ body {
   border: none;
   padding: 0.5rem 1.4rem;
   border-radius: 8px;
-  transition: background-color 0.2s ease, transform 0.15s ease;
+  transition:
+    background-color 0.2s ease,
+    transform 0.15s ease;
 }
 
 .jugoseo-btn-login:hover {
@@ -80,7 +116,20 @@ body {
   transform: translateY(-1px);
 }
 
-/* ---------- Modal de login ---------- */
+.jugoseo-link {
+  color: var(--jugoseo-cian);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.jugoseo-link:hover {
+  color: var(--jugoseo-cian-claro);
+  text-decoration: underline;
+}
+
+/* =========================================================
+   Modales y formularios
+   ========================================================= */
 
 .jugoseo-modal {
   background-color: var(--jugoseo-fondo-oscuro);
@@ -92,6 +141,11 @@ body {
 .jugoseo-modal-title {
   color: var(--jugoseo-cian);
   font-weight: 600;
+}
+
+.jugoseo-modal-footer-text {
+  color: var(--jugoseo-texto-tenue);
+  font-size: 0.9rem;
 }
 
 .jugoseo-input {
@@ -107,146 +161,24 @@ body {
   box-shadow: 0 0 0 0.2rem rgba(34, 195, 230, 0.25);
 }
 
-.jugoseo-modal-footer-text {
+.jugoseo-form-label {
   color: var(--jugoseo-texto-tenue);
+  font-weight: 500;
   font-size: 0.9rem;
 }
 
-.jugoseo-link {
-  color: var(--jugoseo-cian);
-  text-decoration: none;
+.jugoseo-form-error {
+  color: #ff6b6b;
+  font-size: 0.85rem;
+}
+
+.jugoseo-contador-excedido {
+  color: #ff6b6b !important;
   font-weight: 600;
 }
 
-.jugoseo-link:hover {
-  color: var(--jugoseo-cian-claro);
-  text-decoration: underline;
-}
-
-/* ---------- Hero de ejemplo (solo para previsualizar contraste) ---------- */
-
-.jugoseo-hero {
-  height: 45vh;
-  background: radial-gradient(circle at center, rgba(34,195,230,0.15), var(--jugoseo-fondo-oscuro-2) 70%);
-}
-
-.jugoseo-hero-title {
-  color: var(--jugoseo-cian);
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-shadow: 0 0 25px rgba(34, 195, 230, 0.6);
-}
-
 /* =========================================================
-   Reproductor fijo (fixed-bottom)
-   ========================================================= */
-
-.jugoseo-player {
-  background-color: var(--jugoseo-fondo-oscuro);
-  border-top: 1px solid var(--jugoseo-borde);
-  padding: 0.6rem 1rem;
-  z-index: 1040; /* por encima del contenido, por debajo de modales */
-}
-
-.jugoseo-player-cover {
-  width: 42px;
-  height: 42px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, var(--jugoseo-cian), var(--jugoseo-fondo-oscuro-2));
-  flex-shrink: 0;
-}
-
-.jugoseo-player-info .titulo {
-  color: var(--jugoseo-texto-claro);
-  font-weight: 600;
-  font-size: 0.9rem;
-  line-height: 1.1;
-}
-
-.jugoseo-player-info .subtitulo {
-  color: var(--jugoseo-texto-tenue);
-  font-size: 0.78rem;
-}
-
-.jugoseo-live-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #ff4d4d;
-  display: inline-block;
-  margin-right: 5px;
-  animation: jugoseo-pulse 1.4s infinite;
-}
-
-@keyframes jugoseo-pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.6); }
-  70%  { box-shadow: 0 0 0 7px rgba(255, 77, 77, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0); }
-}
-
-.jugoseo-btn-play {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: var(--jugoseo-cian);
-  color: var(--jugoseo-fondo-oscuro);
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: background-color 0.2s ease, transform 0.15s ease;
-}
-
-.jugoseo-btn-play:hover {
-  background-color: var(--jugoseo-cian-claro);
-  transform: scale(1.05);
-}
-
-.jugoseo-volume {
-  accent-color: var(--jugoseo-cian);
-  width: 90px;
-}
-
-/*
-  Layout de app.html con flexbox: el navbar (fixed-top) y el player
-  (fixed-bottom) quedan fuera del flujo, y este contenedor ocupa
-  todo el alto de pantalla, dejando padding para no quedar tapado
-  por ninguno de los dos. El iframe se estira para llenar todo el
-  espacio disponible entre navbar y player.
-*/
-body.jugoseo-shell-body {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;    /* alto fijo: la página nunca scrollea completa */
-  overflow: hidden;  /* si algo se desborda, scrollea DENTRO del iframe, no la página */
-}
-
-.jugoseo-app-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  padding-top: 70px;   /* alto del navbar fijo */
-  padding-bottom: 64px; /* alto aproximado del player fijo */
-  background-color: var(--jugoseo-fondo-oscuro-2);
-}
-
-.jugoseo-frame-wrap {
-  flex: 1;
-  min-height: 0;
-}
-
-.jugoseo-frame-wrap iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-  background-color: var(--jugoseo-fondo-oscuro-2);
-}
-
-
-/* =========================================================
-   Contenido de las páginas internas (cargadas en el iframe)
+   Contenido y tarjetas
    ========================================================= */
 
 .pagina-interna {
@@ -262,14 +194,15 @@ body.jugoseo-shell-body {
   text-shadow: 0 0 14px rgba(34, 195, 230, 0.35);
 }
 
-/* Tarjetas genéricas (tienda, noticias, programas) */
 .jugoseo-card {
   background-color: var(--jugoseo-fondo-oscuro);
   border: 1px solid var(--jugoseo-borde);
   border-radius: 12px;
   padding: 1.4rem;
   height: 100%;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .jugoseo-card:hover {
@@ -279,10 +212,11 @@ body.jugoseo-shell-body {
 
 .jugoseo-card-img {
   width: 100%;
-  height: 160px; /* o el alto que ya tenías */
+  height: 160px;
   object-fit: cover;
   border-radius: 8px;
 }
+
 .jugoseo-card-titulo {
   color: var(--jugoseo-texto-claro);
   font-weight: 600;
@@ -309,7 +243,21 @@ body.jugoseo-shell-body {
   border-radius: 999px;
 }
 
-/* Tabla de programación */
+.jugoseo-programa-detalle-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 600px;
+  object-fit: contain;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 8px;
+}
+
+/* =========================================================
+   Tablas
+   ========================================================= */
+
 .jugoseo-tabla-programas {
   --bs-table-bg: transparent;
   --bs-table-color: var(--jugoseo-texto-claro);
@@ -329,34 +277,22 @@ body.jugoseo-shell-body {
   vertical-align: middle;
 }
 
-/* Formulario de contacto */
-.jugoseo-form-label {
-  color: var(--jugoseo-texto-tenue);
-  font-weight: 500;
-  font-size: 0.9rem;
-}
-
-.jugoseo-form-error {
-  color: #ff6b6b;
-  font-size: 0.85rem;
-}
-
-.jugoseo-contador-excedido {
-  color: #ff6b6b !important;
-  font-weight: 600;
-}
-
 /* =========================================================
-   Landing (index.html) — logo, carrusel, sin menú
+   Portada
    ========================================================= */
 
 .jugoseo-landing-body {
-  padding-bottom: 90px; /* deja espacio para el player fijo */
+  padding-bottom: 0;
 }
 
 .jugoseo-landing-header {
   padding: 4rem 1.5rem 2rem;
-  background: radial-gradient(circle at center, rgba(34,195,230,0.15), var(--jugoseo-fondo-oscuro-2) 70%);
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(34, 195, 230, 0.15),
+      var(--jugoseo-fondo-oscuro-2) 70%
+    );
 }
 
 .jugoseo-landing-logo {
@@ -373,7 +309,33 @@ body.jugoseo-shell-body {
   margin: 0.5rem 0 1.75rem;
 }
 
-.jugoseo-carrusel-inner {
+.jugoseo-portada-contenido {
+  padding-bottom: 2rem;
+}
+
+.jugoseo-hero {
+  height: 45vh;
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(34, 195, 230, 0.15),
+      var(--jugoseo-fondo-oscuro-2) 70%
+    );
+}
+
+.jugoseo-hero-title {
+  color: var(--jugoseo-cian);
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-shadow: 0 0 25px rgba(34, 195, 230, 0.6);
+}
+
+/* =========================================================
+   Carrusel
+   ========================================================= */
+
+.jugoseo-carrusel-inner,
+.jugoseo-carrusel .carousel-inner {
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid var(--jugoseo-borde);
@@ -389,28 +351,368 @@ body.jugoseo-shell-body {
 .jugoseo-slide-texto h2 {
   color: #fff;
   font-weight: 700;
-  text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
 .jugoseo-slide-texto p {
-  color: rgba(255,255,255,0.9);
+  color: rgba(255, 255, 255, 0.9);
   margin-bottom: 0;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
-.jugoseo-slide-1 { background: linear-gradient(135deg, #0d0f12, #1a5f73, #22c3e6); }
-.jugoseo-slide-2 { background: linear-gradient(135deg, #0d0f12, #6e2a7a, #c23fc9); }
-.jugoseo-slide-3 { background: linear-gradient(135deg, #0d0f12, #1f6e4a, #2fd67d); }
-.jugoseo-slide-4 { background: linear-gradient(135deg, #0d0f12, #8a4b12, #f2a13a); }
+.jugoseo-slide-1 {
+  background: linear-gradient(135deg, #0d0f12, #1a5f73, #22c3e6);
+}
 
-/* Saludo de usuario conectado (app.html) */
-.jugoseo-usuario-conectado {
-  color: var(--jugoseo-texto-tenue);
-  font-size: 0.9rem;
+.jugoseo-slide-2 {
+  background: linear-gradient(135deg, #0d0f12, #6e2a7a, #c23fc9);
+}
+
+.jugoseo-slide-3 {
+  background: linear-gradient(135deg, #0d0f12, #1f6e4a, #2fd67d);
+}
+
+.jugoseo-slide-4 {
+  background: linear-gradient(135deg, #0d0f12, #8a4b12, #f2a13a);
+}
+
+/* Carrusel con imágenes */
+
+.jugoseo-carrusel-visual .carousel-inner {
+  border-radius: 20px;
+  border: 1px solid var(--jugoseo-borde);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.25);
+}
+
+.jugoseo-carrusel-visual .jugoseo-slide {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  align-items: center;
+  gap: 2.5rem;
+  height: auto;
+  min-height: 380px;
+  padding: 3rem 4.5rem 3.5rem;
+}
+
+.jugoseo-carrusel-visual .jugoseo-slide-1 {
+  background:
+    radial-gradient(
+      circle at right,
+      rgba(34, 195, 230, 0.22),
+      transparent 65%
+    ),
+    #101b23;
+}
+
+.jugoseo-carrusel-visual .jugoseo-slide-2 {
+  background:
+    radial-gradient(
+      circle at right,
+      rgba(194, 63, 201, 0.2),
+      transparent 65%
+    ),
+    #1b1424;
+}
+
+.jugoseo-carrusel-visual .jugoseo-slide-3 {
+  background:
+    radial-gradient(
+      circle at right,
+      rgba(47, 214, 125, 0.18),
+      transparent 65%
+    ),
+    #10231e;
+}
+
+.jugoseo-carrusel-visual .jugoseo-slide-4 {
+  background:
+    radial-gradient(
+      circle at right,
+      rgba(242, 161, 58, 0.2),
+      transparent 65%
+    ),
+    #241c15;
+}
+
+.jugoseo-slide-etiqueta {
+  display: inline-block;
+  margin-bottom: 1rem;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  color: var(--jugoseo-texto-claro);
+  background-color: rgba(255, 255, 255, 0.06);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.jugoseo-carrusel-visual .jugoseo-slide-texto {
+  min-width: 0;
+}
+
+.jugoseo-carrusel-visual .jugoseo-slide-texto h2 {
+  margin-bottom: 1rem;
+  font-size: clamp(1.8rem, 3.5vw, 3rem);
+  line-height: 1.15;
+  overflow-wrap: break-word;
+}
+
+.jugoseo-carrusel-visual .jugoseo-slide-texto p {
+  max-width: 38rem;
+  color: #dce5ea;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.jugoseo-slide-imagen {
+  min-width: 0;
+}
+
+.jugoseo-slide-imagen img {
+  display: block;
+  width: 100%;
+  height: 280px;
+  object-fit: contain;
+  border-radius: 16px;
+  filter: drop-shadow(0 14px 20px rgba(0, 0, 0, 0.3));
+}
+
+.jugoseo-carrusel-visual .carousel-control-prev,
+.jugoseo-carrusel-visual .carousel-control-next {
+  width: 3.5rem;
+}
+
+.jugoseo-carrusel-visual .carousel-indicators {
+  margin-bottom: 1rem;
 }
 
 /* =========================================================
-   Panel Administrativo (admin.html)
+   Reproductor de radio
+   ========================================================= */
+
+.jugoseo-player {
+  background-color: var(--jugoseo-fondo-oscuro);
+  border-bottom: 1px solid var(--jugoseo-borde);
+  padding: 0.6rem 1rem;
+  z-index: 1030;
+}
+
+.jugoseo-player-cover {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  background:
+    linear-gradient(
+      135deg,
+      var(--jugoseo-cian),
+      var(--jugoseo-fondo-oscuro-2)
+    );
+  flex-shrink: 0;
+}
+
+.jugoseo-player-info .titulo {
+  color: var(--jugoseo-texto-claro);
+  font-weight: 600;
+  font-size: 0.9rem;
+  line-height: 1.1;
+}
+
+.jugoseo-player-info .subtitulo {
+  color: var(--jugoseo-texto-tenue);
+  font-size: 0.78rem;
+}
+
+.jugoseo-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #ff4d4d;
+  display: inline-block;
+  margin-right: 5px;
+  animation: jugoseo-pulse 1.4s infinite;
+}
+
+@keyframes jugoseo-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.6);
+  }
+
+  70% {
+    box-shadow: 0 0 0 7px rgba(255, 77, 77, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 77, 77, 0);
+  }
+}
+
+.jugoseo-btn-play {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--jugoseo-cian);
+  color: var(--jugoseo-fondo-oscuro);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition:
+    background-color 0.2s ease,
+    transform 0.15s ease;
+}
+
+.jugoseo-btn-play:hover {
+  background-color: var(--jugoseo-cian-claro);
+  transform: scale(1.05);
+}
+
+.jugoseo-volume {
+  accent-color: var(--jugoseo-cian);
+  width: 90px;
+}
+
+/* Reproductor destacado y fijo arriba */
+
+.jugoseo-player-destacado {
+  top: 0;
+  bottom: auto;
+  padding: 1rem 0;
+  padding-top: calc(
+    1rem + env(safe-area-inset-top, 0px)
+  );
+  color: var(--jugoseo-texto-claro);
+  background:
+    linear-gradient(
+      110deg,
+      rgba(34, 195, 230, 0.12),
+      transparent 55%
+    ),
+    var(--jugoseo-fondo-oscuro);
+  border-top: none;
+  border-bottom: 2px solid var(--jugoseo-cian);
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.35);
+  z-index: 1030;
+}
+
+.jugoseo-player-contenido {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto 160px;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.jugoseo-player-marca {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border: 1px solid var(--jugoseo-borde);
+  border-radius: 16px;
+  color: var(--jugoseo-cian);
+  background-color: rgba(34, 195, 230, 0.08);
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.jugoseo-player-marca span {
+  margin-top: 0.35rem;
+  font-size: 0.55rem;
+  letter-spacing: 0.18em;
+}
+
+.jugoseo-player-datos {
+  min-width: 0;
+}
+
+.jugoseo-player-etiqueta {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.25rem;
+  color: var(--jugoseo-cian-claro);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.jugoseo-player-destacado .jugoseo-live-dot {
+  width: 7px;
+  height: 7px;
+  margin: 0;
+  flex-shrink: 0;
+  background-color: var(--jugoseo-texto-tenue);
+  animation: none;
+}
+
+.jugoseo-player-destacado.esta-reproduciendo .jugoseo-live-dot {
+  background-color: #47df96;
+  box-shadow: 0 0 9px rgba(71, 223, 150, 0.5);
+}
+
+.jugoseo-player-nombre {
+  overflow: hidden;
+  margin-bottom: 0.15rem;
+  color: var(--jugoseo-texto-claro);
+  font-size: 1.05rem;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.jugoseo-player-estado {
+  color: var(--jugoseo-texto-claro);
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.jugoseo-player-programa {
+  margin-top: 0.15rem;
+  color: var(--jugoseo-texto-tenue);
+  font-size: 0.72rem;
+  overflow-wrap: anywhere;
+}
+
+.jugoseo-player-destacado .jugoseo-btn-play {
+  gap: 0.65rem;
+  width: auto;
+  height: auto;
+  min-height: 56px;
+  padding: 0.8rem 1.2rem;
+  border-radius: 14px;
+  font-weight: 700;
+}
+
+.jugoseo-player-destacado .jugoseo-btn-play:focus-visible {
+  outline: 3px solid var(--jugoseo-texto-claro);
+  outline-offset: 4px;
+}
+
+.jugoseo-player-volumen {
+  min-width: 0;
+}
+
+.jugoseo-player-volumen-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+  color: var(--jugoseo-texto-tenue);
+  font-size: 0.75rem;
+}
+
+.jugoseo-player-destacado .jugoseo-volume {
+  display: block;
+  width: 100%;
+  margin: 0;
+}
+
+/* =========================================================
+   Panel administrativo
    ========================================================= */
 
 .jugoseo-admin-body {
@@ -451,7 +753,9 @@ body.jugoseo-shell-body {
   border-radius: 8px;
   padding: 0.6rem 0.75rem;
   margin-bottom: 0.25rem;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 .jugoseo-admin-link:hover {
@@ -477,19 +781,8 @@ body.jugoseo-shell-body {
   color: var(--jugoseo-cian);
 }
 
-@media (max-width: 767.98px) {
-  .jugoseo-admin-layout {
-    flex-direction: column;
-  }
-  .jugoseo-admin-sidebar {
-    width: 100%;
-    height: auto;
-    position: relative;
-  }
-}
-
 /* =========================================================
-   Chat en vivo (iframe externo, xat.com)
+   Chat externo
    ========================================================= */
 
 .jugoseo-chat-wrapper {
@@ -507,14 +800,8 @@ body.jugoseo-shell-body {
   border: none;
 }
 
-@media (max-width: 575.98px) {
-  .jugoseo-chat-wrapper iframe {
-    height: 380px;
-  }
-}
-
 /* =========================================================
-   Tienda / Carrito
+   Tienda y carrito
    ========================================================= */
 
 .jugoseo-qty-input {
@@ -544,6 +831,11 @@ body.jugoseo-shell-body {
   border-left: 1px solid var(--jugoseo-borde);
   color: var(--jugoseo-texto-claro);
   width: 380px;
+}
+
+.offcanvas.jugoseo-offcanvas {
+  --bs-offcanvas-width: 420px;
+  width: min(420px, 100vw);
 }
 
 .jugoseo-carrito-item {
@@ -592,7 +884,10 @@ body.jugoseo-shell-body {
   color: #ff6b6b;
 }
 
-/* Toasts de notificación */
+/* =========================================================
+   Notificaciones
+   ========================================================= */
+
 .jugoseo-toast {
   color: var(--jugoseo-texto-claro);
   border-radius: 10px;
@@ -611,43 +906,153 @@ body.jugoseo-shell-body {
   border: 1px solid var(--jugoseo-borde) !important;
 }
 
-/* Adaptación del carrusel original a React-Bootstrap */
-.jugoseo-carrusel .carousel-inner {
-  border-radius: 14px;
+/* =========================================================
+   Compatibilidad con el layout anterior
+   ========================================================= */
+
+body.jugoseo-shell-body {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
   overflow: hidden;
-  border: 1px solid var(--jugoseo-borde);
 }
 
-/* Estructura interna de React, sin iframe */
-.jugoseo-interna {
-  min-height: 100vh;
+.jugoseo-app-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding-top: 70px;
+  padding-bottom: 64px;
   background-color: var(--jugoseo-fondo-oscuro-2);
 }
 
-.jugoseo-interna-contenido {
-  padding-top: 110px;
-  padding-bottom: 90px;
-  color: var(--jugoseo-texto-claro);
+.jugoseo-frame-wrap {
+  flex: 1;
+  min-height: 0;
 }
 
-.jugoseo-interna .nav-link.disabled {
-  opacity: 0.45;
-}
-
-/* Imágenes de las fichas de programas */
-.jugoseo-programa-detalle-img {
-  display: block;
+.jugoseo-frame-wrap iframe {
   width: 100%;
-  height: auto;
-  max-height: 600px;
-  object-fit: contain;
-  margin-left: auto;
-  margin-right: auto;
-  border-radius: 8px;
+  height: 100%;
+  border: none;
+  background-color: var(--jugoseo-fondo-oscuro-2);
 }
 
-/* Carrito lateral adaptable */
-.offcanvas.jugoseo-offcanvas {
-  --bs-offcanvas-width: 420px;
-  width: min(420px, 100vw);
+/* =========================================================
+   Adaptación a pantallas pequeñas
+   ========================================================= */
+
+@media (max-width: 1199.98px) {
+  .jugoseo-navbar .navbar-collapse {
+    max-height: calc(
+      100vh - var(--jugoseo-player-alto) - 90px
+    );
+    max-height: max(
+      0px,
+      calc(100dvh - var(--jugoseo-player-alto) - 90px)
+    );
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .jugoseo-admin-layout {
+    flex-direction: column;
+  }
+
+  .jugoseo-admin-sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+  }
+
+  .jugoseo-carrusel-visual .jugoseo-slide {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+    min-height: 480px;
+    padding: 2rem 3rem 3.5rem;
+  }
+
+  .jugoseo-slide-imagen img {
+    height: 190px;
+  }
+
+  .jugoseo-player-contenido {
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+    gap: 0.8rem;
+  }
+
+  .jugoseo-player-marca {
+    width: 52px;
+    height: 52px;
+    font-size: 1.7rem;
+  }
+
+  .jugoseo-player-volumen {
+    grid-column: 2 / -1;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .jugoseo-chat-wrapper iframe {
+    height: 380px;
+  }
+
+  .jugoseo-carrusel-visual .jugoseo-slide {
+    min-height: 460px;
+    padding: 1.75rem 2.75rem 3.5rem;
+  }
+
+  .jugoseo-carrusel-visual .jugoseo-slide-texto p {
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+
+  .jugoseo-slide-imagen img {
+    height: 165px;
+  }
+
+  .jugoseo-carrusel-visual .carousel-control-prev,
+  .jugoseo-carrusel-visual .carousel-control-next {
+    width: 2.25rem;
+  }
+
+  .jugoseo-player-contenido {
+    grid-template-columns: minmax(0, 1fr) 56px;
+  }
+
+  .jugoseo-player-marca,
+  .jugoseo-player-accion {
+    display: none;
+  }
+
+  .jugoseo-player-volumen {
+    grid-column: 1 / -1;
+  }
+
+  .jugoseo-player-destacado .jugoseo-btn-play {
+    width: 56px;
+    min-height: 56px;
+    padding: 0;
+  }
+
+  .jugoseo-player-nombre {
+    font-size: 0.95rem;
+  }
+}
+
+/* =========================================================
+   Preferencias de movimiento
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .jugoseo-carrusel-visual .carousel-item,
+  .jugoseo-player-destacado .jugoseo-btn-play {
+    transition: none;
+  }
+
+  .jugoseo-live-dot {
+    animation: none;
+  }
 }

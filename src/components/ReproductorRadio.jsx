@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
+
 import useEmision from '../hooks/useEmision.js'
 
 const STREAM = 'https://stream.zeno.fm/f3wvbbqmdg8uv'
 
 export default function ReproductorRadio() {
   const {
-  emision,
-  programa: programaEnEmision,
-  error: errorEmision,
+    emision,
+    programa: programaEnEmision,
+    error: errorEmision,
   } = useEmision()
+
+  const playerRef = useRef(null)
   const audioRef = useRef(null)
   const timeoutRef = useRef(null)
 
@@ -22,6 +25,7 @@ export default function ReproductorRadio() {
 
   useEffect(() => {
     const audio = audioRef.current
+
     audio.volume = 0.8
 
     function manejarDesconexion() {
@@ -34,8 +38,60 @@ export default function ReproductorRadio() {
     window.addEventListener('offline', manejarDesconexion)
 
     return () => {
-      window.removeEventListener('offline', manejarDesconexion)
+      window.removeEventListener(
+        'offline',
+        manejarDesconexion,
+      )
+
       clearTimeout(timeoutRef.current)
+    }
+  }, [])
+
+  useEffect(() => {
+    const player = playerRef.current
+
+    if (!player) {
+      return
+    }
+
+    function actualizarAltura() {
+      const altura = Math.ceil(
+        player.getBoundingClientRect().height,
+      )
+
+      document.documentElement.style.setProperty(
+        '--jugoseo-player-alto',
+        `${altura}px`,
+      )
+    }
+
+    actualizarAltura()
+
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', actualizarAltura)
+
+      return () => {
+        window.removeEventListener(
+          'resize',
+          actualizarAltura,
+        )
+
+        document.documentElement.style.removeProperty(
+          '--jugoseo-player-alto',
+        )
+      }
+    }
+
+    const observador = new ResizeObserver(actualizarAltura)
+
+    observador.observe(player)
+
+    return () => {
+      observador.disconnect()
+
+      document.documentElement.style.removeProperty(
+        '--jugoseo-player-alto',
+      )
     }
   }, [])
 
@@ -66,6 +122,7 @@ export default function ReproductorRadio() {
     } catch {
       limpiarTimeout()
       setReproduciendo(false)
+
       setEstado(
         navigator.onLine
           ? 'Transmisión no disponible'
@@ -105,85 +162,113 @@ export default function ReproductorRadio() {
 
   function cambiarVolumen(evento) {
     const nuevoVolumen = Number(evento.target.value)
+
     setVolumen(nuevoVolumen)
     audioRef.current.volume = nuevoVolumen
   }
 
+  const nombrePrograma =
+    programaEnEmision?.nombre || 'Jugoseo en vivo'
+
+  const estadoPrograma = errorEmision
+    ? 'Estado del programa no disponible'
+    : emision
+      ? 'Programa activo · simulación'
+      : 'Sin programa activo · simulación'
+
   return (
-    <div className="jugoseo-player fixed-bottom d-flex align-items-center gap-3">
-      <div className="jugoseo-player-cover" />
-
-      <div
-        className="jugoseo-player-info d-none d-sm-block"
-        style={{ minWidth: 140 }}
-      >
-        <div className="titulo">
-          <span className="jugoseo-live-dot" />
-          {programaEnEmision?.nombre || 'Jugoseo en vivo'}
-        </div>
-
-        <div className="subtitulo" aria-live="polite">
-          {estado}
-        </div>
-
-        <div className="subtitulo" aria-live="polite">
-          {errorEmision
-            ? 'Estado de programa no disponible'
-            : emision
-              ? 'Programa en vivo · simulación'
-              : 'Sin programa activo · simulación'}
-        </div>
-      </div>
-
-      <button
-        type="button"
-        className="jugoseo-btn-play"
-        onClick={alternarReproduccion}
-        aria-label={reproduciendo ? 'Pausar' : 'Reproducir'}
-      >
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="currentColor"
+    <section
+      ref={playerRef}
+      className={
+        'jugoseo-player jugoseo-player-destacado fixed-top' +
+        (reproduciendo ? ' esta-reproduciendo' : '')
+      }
+      aria-label="Reproductor de Radio Jugoseo"
+    >
+      <div className="container jugoseo-player-contenido">
+        <div
+          className="jugoseo-player-marca"
           aria-hidden="true"
         >
-          {reproduciendo ? (
-            <path d="M4 2.5h3v11H4v-11Zm5 0h3v11H9v-11Z" />
-          ) : (
-            <path d="M4 2.5v11l9-5.5-9-5.5Z" />
-          )}
-        </svg>
-      </button>
+          J
+          <span>RADIO</span>
+        </div>
 
-      <div className="d-none d-md-flex align-items-center gap-2 ms-auto">
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="currentColor"
-          style={{ color: 'var(--jugoseo-texto-tenue)' }}
-          aria-hidden="true"
+        <div className="jugoseo-player-datos">
+          <div className="jugoseo-player-etiqueta">
+            <span className="jugoseo-live-dot" />
+            RADIO ONLINE
+          </div>
+
+          <div
+            className="jugoseo-player-nombre"
+            title={nombrePrograma}
+          >
+            {nombrePrograma}
+          </div>
+
+          <div
+            className="jugoseo-player-estado"
+            role="status"
+          >
+            {estado}
+          </div>
+
+          <div className="jugoseo-player-programa">
+            {estadoPrograma}
+          </div>
+        </div>
+
+        <button
+          type="button"
+          className="jugoseo-btn-play"
+          onClick={alternarReproduccion}
+          aria-label={
+            reproduciendo
+              ? 'Pausar la radio'
+              : 'Reproducir la radio'
+          }
+          aria-pressed={reproduciendo}
         >
-          <path d="M9 4 5.5 6.5H3v3h2.5L9 12V4Z" />
-          <path
-            d="M11 6.2a2.5 2.5 0 0 1 0 3.6"
-            stroke="currentColor"
-            strokeWidth="1.2"
-            fill="none"
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 16 16"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            {reproduciendo ? (
+              <path d="M4 2.5h3v11H4v-11Zm5 0h3v11H9v-11Z" />
+            ) : (
+              <path d="M4 2.5v11l9-5.5-9-5.5Z" />
+            )}
+          </svg>
+
+          <span className="jugoseo-player-accion">
+            {reproduciendo ? 'Pausar' : 'Escuchar'}
+          </span>
+        </button>
+
+        <div className="jugoseo-player-volumen">
+          <label
+            htmlFor="volumenRadioJugoseo"
+            className="jugoseo-player-volumen-label"
+          >
+            Volumen
+            <span>{Math.round(volumen * 100)}%</span>
+          </label>
+
+          <input
+            id="volumenRadioJugoseo"
+            type="range"
+            className="form-range jugoseo-volume"
+            min="0"
+            max="1"
+            step="0.01"
+            value={volumen}
+            onChange={cambiarVolumen}
           />
-        </svg>
-
-        <input
-          type="range"
-          className="form-range jugoseo-volume"
-          min="0"
-          max="1"
-          step="0.01"
-          value={volumen}
-          onChange={cambiarVolumen}
-          aria-label="Volumen de la radio"
-        />
+        </div>
       </div>
 
       <audio
@@ -207,6 +292,6 @@ export default function ReproductorRadio() {
       >
         Tu navegador no soporta audio HTML5.
       </audio>
-    </div>
+    </section>
   )
 }
