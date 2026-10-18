@@ -20,6 +20,7 @@ import Tienda from './components/Tienda.jsx'
 import PanelProgramas from './components/PanelProgramas.jsx'
 import PanelAdmin from './components/PanelAdmin.jsx'
 import PanelProductos from './components/PanelProductos.jsx'
+import PanelUsuarios from './components/PanelUsuarios.jsx'
 
 export default function App() {
   return (
@@ -119,6 +120,11 @@ export default function App() {
                 <Route
                   path="productos"
                   element={<PanelProductos />}
+                />
+
+                <Route
+                  path="usuarios"
+                  element={<PanelUsuarios />}
                 />
 
                 <Route

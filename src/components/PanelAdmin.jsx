@@ -48,14 +48,18 @@ export default function PanelAdmin() {
             Productos
           </NavLink>
 
-          <button
-            type="button"
-            className="btn btn-outline-light"
-            disabled
-            title="Pendiente de implementación"
+          <NavLink
+            to="/app/admin/usuarios"
+            className={({ isActive }) =>
+              `btn ${
+                isActive
+                  ? 'jugoseo-btn-login'
+                  : 'btn-outline-light'
+              }`
+            }
           >
             Usuarios
-          </button>
+          </NavLink>
 
           <button
             type="button"
