@@ -18,6 +18,7 @@ import Noticias from './components/Noticias.jsx'
 import DetalleNoticia from './components/DetalleNoticia.jsx'
 import Tienda from './components/Tienda.jsx'
 import PanelProgramas from './components/PanelProgramas.jsx'
+import PanelAdmin from './components/PanelAdmin.jsx'
 
 export default function App() {
   return (
@@ -97,8 +98,33 @@ export default function App() {
             >
               <Route
                 path="admin"
-                element={<PanelProgramas />}
-              />
+                element={<PanelAdmin />}
+              >
+                <Route
+                  index
+                  element={
+                    <Navigate
+                      to="programas"
+                      replace
+                    />
+                  }
+                />
+
+                <Route
+                  path="programas"
+                  element={<PanelProgramas />}
+                />
+
+                <Route
+                  path="*"
+                  element={
+                    <Navigate
+                      to="/app/admin/programas"
+                      replace
+                    />
+                  }
+                />
+              </Route>
             </Route>
           </Route>
         </Route>
