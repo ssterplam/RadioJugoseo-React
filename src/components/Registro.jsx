@@ -42,7 +42,7 @@ const campos = [
     tipo: 'email',
     ancho: 'col-12',
     maxLength: 100,
-    placeholder: 'tu@correo.com',
+    placeholder: 'tu@duocuc.cl / tu@gmail.com',
     obligatorio: true,
   },
   {

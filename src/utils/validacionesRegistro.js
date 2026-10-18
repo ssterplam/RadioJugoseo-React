@@ -1,4 +1,7 @@
 import { regionesComunas } from '../data/regionesComunas.js'
+import {
+  validarCorreoRegistro,
+} from './validacionesCorreo.js'
 
 export function validarRun(runIngresado) {
   const run = runIngresado.trim().toUpperCase()
@@ -78,21 +81,10 @@ export function validarRegistro(datos) {
     errores.apellido = 'El apellido no puede superar 100 caracteres.'
   }
 
-  const dominios = [
-    '@duoc.cl',
-    '@profesor.duoc.cl',
-    '@gmail.com',
-  ]
-
-  if (!correo) {
-    errores.correo = 'El correo es obligatorio.'
-  } else if (correo.length > 100) {
-    errores.correo = 'El correo no puede superar 100 caracteres.'
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
-    errores.correo = 'Ingresa un correo con formato válido.'
-  } else if (!dominios.some((dominio) => correo.endsWith(dominio))) {
-    errores.correo =
-      'El correo debe pertenecer a @duoc.cl, @profesor.duoc.cl o @gmail.com.'
+  const errorCorreo = validarCorreoRegistro(correo)
+  
+  if (errorCorreo) {
+    errores.correo = errorCorreo
   }
 
   const errorRun = validarRun(datos.run)

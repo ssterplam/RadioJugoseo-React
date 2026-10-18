@@ -127,8 +127,8 @@ export default function Contacto() {
             </ul>
 
             <p className="jugoseo-card-texto mb-0">
-              Solo aceptamos correos de dominio @duoc.cl,
-              @profesor.duoc.cl o @gmail.com.
+              Aceptamos correos de dominio @duocuc.cl,
+              @gmail.com o @jugoseo.com.
             </p>
 
             <p className="jugoseo-card-texto mt-3">
@@ -199,7 +199,7 @@ export default function Contacto() {
                   className={`form-control jugoseo-input ${
                     claseCampo('correo')
                   }`}
-                  placeholder="tu@duoc.cl / tu@gmail.com"
+                  placeholder="tu@duocuc.cl / tu@gmail.com / tu@jugoseo.com"
                   value={datos.correo}
                   onChange={cambiarCampo}
                   onBlur={marcarTocado}

@@ -2,13 +2,11 @@ import { useState } from 'react'
 import Modal from 'react-bootstrap/Modal'
 import { usuariosDemo } from '../data/usuariosDemo.js'
 import { Link, useNavigate } from 'react-router-dom'
-import { esRolValido } from '../data/roles.js'
-
-const dominiosPermitidos = [
-  '@duocuc.cl',
-  '@gmail.com',
-  '@jugoseo.com'
-]
+import {
+  normalizarCorreo,
+  validarCorreoLogin,
+  validarCorreoParaRol,
+} from '../utils/validacionesCorreo.js'
 
 export default function LoginModal({ mostrar, cerrar }) {
   const navigate = useNavigate()
@@ -24,23 +22,13 @@ export default function LoginModal({ mostrar, cerrar }) {
     setMensaje('')
     setExito(false)
 
-    const correoLimpio = correo.trim().toLowerCase()
+    const correoLimpio = normalizarCorreo(correo)
     const nuevosErrores = {}
 
-    if (!correoLimpio) {
-      nuevosErrores.correo = 'Ingrese su correo electrónico'
-    } else if (correoLimpio.length > 100) {
-      nuevosErrores.correo = 'El correo no puede superar 100 caracteres'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correoLimpio)) {
-      nuevosErrores.correo = 'El correo debe tener un formato válido'
-    } else if (
-      correoLimpio !== 'admin@jugoseo.com' &&
-      !dominiosPermitidos.some((dominio) =>
-        correoLimpio.endsWith(dominio),
-      )
-    ) {
-      nuevosErrores.correo =
-        'El dominio debe ser @duoc.cl, @profesor.duoc.cl o @gmail.com'
+    const errorCorreo = validarCorreoLogin(correoLimpio)
+
+    if (errorCorreo) {
+      nuevosErrores.correo = errorCorreo
     }
 
     if (!password) {
@@ -90,11 +78,13 @@ export default function LoginModal({ mostrar, cerrar }) {
 
       const rol = cuenta.rol || 'Cliente'
 
-      if (!esRolValido(rol)) {
-        setMensaje(
-          'La cuenta tiene un rol no admitido. ' +
-            'Si utilizaba el rol Vendedor, debe ser reasignada por Administración.',
-        )
+      const errorCuenta = validarCorreoParaRol(
+        correoLimpio,
+        rol,
+      )
+
+      if (errorCuenta) {
+        setMensaje(errorCuenta)
         return
       }
 
@@ -161,7 +151,7 @@ export default function LoginModal({ mostrar, cerrar }) {
               className={`form-control jugoseo-input ${
                 errores.correo ? 'is-invalid' : ''
               }`}
-              placeholder="tu@duoc.cl"
+              placeholder="tu@duocuc.cl / tu@gmail.com / tu@jugoseo.com"
               autoComplete="username"
               value={correo}
               onChange={(evento) => {
