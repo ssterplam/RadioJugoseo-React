@@ -1,30 +1,53 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 import { formatearCLP } from '../utils/formatoMoneda.js'
 
-export default function ProductoCard({ 
+export default function ProductoCard({
   producto,
   agregarProducto,
   bloqueado = false,
 }) {
   const [imagenFallida, setImagenFallida] = useState(false)
   const [cantidad, setCantidad] = useState('1')
+  const [agregando, setAgregando] = useState(false)
+
+  const agregandoRef = useRef(false)
 
   const agotado = producto.stock === 0
+
   const pocasUnidades =
     producto.stock > 0 && producto.stock <= 5
+
+  const controlesBloqueados =
+    agotado || bloqueado || agregando
 
   const rutaImagen =
     `${import.meta.env.BASE_URL}${producto.imagen.replace(/^\/+/, '')}`
 
-  function agregar() {
-    const agregado = agregarProducto(
-      producto.id,
-      Number(cantidad),
-    )
+  async function agregar() {
+    if (
+      agregandoRef.current ||
+      agotado ||
+      bloqueado
+    ) {
+      return
+    }
 
-    if (agregado) {
-      setCantidad('1')
+    agregandoRef.current = true
+    setAgregando(true)
+
+    try {
+      const agregado = await agregarProducto(
+        producto.id,
+        Number(cantidad),
+      )
+
+      if (agregado) {
+        setCantidad('1')
+      }
+    } finally {
+      agregandoRef.current = false
+      setAgregando(false)
     }
   }
 
@@ -81,8 +104,10 @@ export default function ProductoCard({
           max={producto.stock}
           step={1}
           value={agotado ? '0' : cantidad}
-          onChange={(evento) => setCantidad(evento.target.value)}
-          disabled={agotado || bloqueado}
+          onChange={(evento) => {
+            setCantidad(evento.target.value)
+          }}
+          disabled={controlesBloqueados}
           aria-label={`Cantidad de ${producto.nombre}`}
         />
 
@@ -90,9 +115,14 @@ export default function ProductoCard({
           type="button"
           className="btn jugoseo-btn-login flex-grow-1"
           onClick={agregar}
-          disabled={agotado || bloqueado}
+          disabled={controlesBloqueados}
+          aria-busy={agregando}
         >
-          {agotado ? 'Sin stock' : 'Agregar'}
+          {agregando
+            ? 'Agregando…'
+            : agotado
+              ? 'Sin stock'
+              : 'Agregar'}
         </button>
       </div>
     </article>

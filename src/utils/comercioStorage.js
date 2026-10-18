@@ -5,6 +5,10 @@ import {
 
 export const CLAVE_COMERCIO = 'jugoseoComercio'
 
+const NOMBRE_BLOQUEO = 'jugoseo-comercio-escritura'
+
+let bloqueoActivo = false
+
 function leerAnterior(clave, valorInicial) {
   const texto = localStorage.getItem(clave)
 
@@ -65,9 +69,56 @@ export function leerComercio() {
 }
 
 export function guardarComercio(estado) {
-  validarEstructura(estado)
+  if (!bloqueoActivo) {
+    throw new Error(
+        'La escritura de comercio requiere el bloqueo común.',
+        )
+    }
+    
+    validarEstructura(estado)
 
-  const texto = JSON.stringify(estado)
+    const texto = JSON.stringify(estado)
 
-  localStorage.setItem(CLAVE_COMERCIO, texto)
+    localStorage.setItem(CLAVE_COMERCIO, texto)
+}
+
+export async function conBloqueoComercio(tarea) {
+  if (
+    typeof navigator === 'undefined' ||
+    !navigator.locks?.request
+  ) {
+    const error = new Error(
+      'Este navegador o dirección no permite coordinar ' +
+        'el almacenamiento. Utiliza localhost o HTTPS ' +
+        'en un navegador compatible.',
+    )
+
+    error.codigo = 'BLOQUEO_NO_DISPONIBLE'
+    throw error
+  }
+
+  return navigator.locks.request(
+    NOMBRE_BLOQUEO,
+    { mode: 'exclusive' },
+    () => {
+      bloqueoActivo = true
+
+      try {
+        const resultado = tarea()
+
+        if (
+          resultado &&
+          typeof resultado.then === 'function'
+        ) {
+          throw new Error(
+            'La operación interna de comercio debe ser síncrona.',
+          )
+        }
+
+        return resultado
+      } finally {
+        bloqueoActivo = false
+      }
+    },
+  )
 }

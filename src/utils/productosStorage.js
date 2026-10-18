@@ -2,10 +2,14 @@ import {
   CATEGORIAS_VALIDAS,
   PRODUCTOS_INICIALES,
 } from '../data/productos.js'
+
 import { leerSesion } from '../data/sesion.js'
+
 import { obtenerCarrito } from './carritoStorage.js'
 import { validarProducto } from './validacionesProducto.js'
+
 import {
+  conBloqueoComercio,
   guardarComercio,
   leerComercio,
 } from './comercioStorage.js'
@@ -85,6 +89,7 @@ export function obtenerProductosAdministrables() {
   exigirAdministrador()
 
   const productos = obtenerProductos()
+
   validarLista(productos)
 
   return productos
@@ -118,7 +123,10 @@ function reservarId(productos) {
     throw new Error('No se pudo generar el identificador.')
   }
 
-  localStorage.setItem(CLAVE_SECUENCIA, String(nuevoId))
+  localStorage.setItem(
+    CLAVE_SECUENCIA,
+    String(nuevoId),
+  )
 
   return nuevoId
 }
@@ -135,7 +143,7 @@ function prepararDatos(datos) {
   }
 }
 
-export function crearProducto(datos) {
+function crearProductoInterno(datos) {
   exigirAdministrador()
 
   const productos = obtenerProductosAdministrables()
@@ -150,23 +158,52 @@ export function crearProducto(datos) {
     ...prepararDatos(datos),
   }
 
-  const actualizados = [...productos, nuevo]
+  const actualizados = [
+    ...productos,
+    nuevo,
+  ]
 
   guardarProductos(actualizados)
 
   return actualizados
 }
 
-export function actualizarProducto(id, datos) {
+function actualizarProductoInterno(
+  id,
+  datos,
+  productoEsperado,
+) {
   exigirAdministrador()
 
   const productos = obtenerProductosAdministrables()
 
-  if (!productos.some((producto) => producto.id === id)) {
+  const productoActual = productos.find(
+    (producto) => producto.id === id,
+  )
+
+  if (!productoActual) {
     throw new Error('El producto no está disponible.')
   }
 
-  const errores = validarProducto(datos, productos, id)
+  if (
+    !productoEsperado ||
+    JSON.stringify(productoActual) !==
+      JSON.stringify(productoEsperado)
+  ) {
+    const error = new Error(
+      'El producto cambió desde que abriste el formulario. ' +
+        'Ciérralo y vuelve a abrirlo para revisar los datos actuales.',
+    )
+
+    error.codigo = 'PRODUCTO_CAMBIADO'
+    throw error
+  }
+
+  const errores = validarProducto(
+    datos,
+    productos,
+    id,
+  )
 
   if (Object.keys(errores).length > 0) {
     throw new Error('Los datos ingresados no son válidos.')
@@ -188,7 +225,7 @@ export function actualizarProducto(id, datos) {
   return actualizados
 }
 
-export function eliminarProductoAdministrativo(id) {
+function eliminarProductoInterno(id) {
   exigirAdministrador()
 
   const productos = obtenerProductosAdministrables()
@@ -202,7 +239,10 @@ export function eliminarProductoAdministrativo(id) {
   )
 
   if (estaEnCarrito) {
-    const error = new Error('El producto está en el carrito.')
+    const error = new Error(
+      'El producto está en el carrito.',
+    )
+
     error.codigo = 'PRODUCTO_EN_CARRITO'
     throw error
   }
@@ -214,4 +254,30 @@ export function eliminarProductoAdministrativo(id) {
   guardarProductos(actualizados)
 
   return actualizados
+}
+
+export function crearProducto(datos) {
+  return conBloqueoComercio(() =>
+    crearProductoInterno(datos),
+  )
+}
+
+export function actualizarProducto(
+  id,
+  datos,
+  productoEsperado,
+) {
+  return conBloqueoComercio(() =>
+    actualizarProductoInterno(
+      id,
+      datos,
+      productoEsperado,
+    ),
+  )
+}
+
+export function eliminarProductoAdministrativo(id) {
+  return conBloqueoComercio(() =>
+    eliminarProductoInterno(id),
+  )
 }

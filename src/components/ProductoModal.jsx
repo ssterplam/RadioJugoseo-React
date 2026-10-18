@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+
 import Modal from 'react-bootstrap/Modal'
 
 import { CATEGORIAS_VALIDAS } from '../data/productos.js'
@@ -58,8 +59,23 @@ export default function ProductoModal({
 
   const [errores, setErrores] = useState({})
   const [errorGuardado, setErrorGuardado] = useState('')
+  const [guardando, setGuardando] = useState(false)
+
+  const guardandoRef = useRef(false)
+
+  function solicitarCierre() {
+    if (guardandoRef.current) {
+      return
+    }
+
+    cerrar()
+  }
 
   function cambiarCampo(evento) {
+    if (guardandoRef.current) {
+      return
+    }
+
     const { name, value } = evento.target
 
     setDatos((actual) => ({
@@ -75,8 +91,12 @@ export default function ProductoModal({
     setErrorGuardado('')
   }
 
-  function enviar(evento) {
+  async function enviar(evento) {
     evento.preventDefault()
+
+    if (guardandoRef.current) {
+      return
+    }
 
     const nuevosErrores = validarProducto(
       datos,
@@ -91,17 +111,33 @@ export default function ProductoModal({
       return
     }
 
-    if (!guardar(datos)) {
+    guardandoRef.current = true
+    setGuardando(true)
+
+    try {
+      const guardado = await guardar(datos)
+
+      if (!guardado) {
+        setErrorGuardado(
+          'No se pudo guardar el producto. Revisa los datos. ' +
+            'Si cambió el catálogo, cierra este formulario ' +
+            'y vuelve a abrirlo para cargar la versión actual.',
+        )
+      }
+    } catch {
       setErrorGuardado(
-        'No se pudo guardar el producto. Revisa los datos e inténtalo nuevamente.',
+        'No se pudo guardar el producto. Inténtalo nuevamente.',
       )
+    } finally {
+      guardandoRef.current = false
+      setGuardando(false)
     }
   }
 
   return (
     <Modal
       show
-      onHide={cerrar}
+      onHide={solicitarCierre}
       centered
       size="lg"
       contentClassName="jugoseo-modal"
@@ -118,19 +154,27 @@ export default function ProductoModal({
         <button
           type="button"
           className="btn-close btn-close-white"
-          onClick={cerrar}
+          onClick={solicitarCierre}
           aria-label="Cerrar"
+          disabled={guardando}
         />
       </Modal.Header>
 
       <Modal.Body>
         {errorGuardado && (
-          <div className="alert alert-danger" role="alert">
+          <div
+            className="alert alert-danger"
+            role="alert"
+          >
             {errorGuardado}
           </div>
         )}
 
-        <form onSubmit={enviar} noValidate>
+        <form
+          onSubmit={enviar}
+          noValidate
+          aria-busy={guardando}
+        >
           {campos.map((campo) => {
             const id = `producto-${campo.nombre}`
 
@@ -140,6 +184,7 @@ export default function ProductoModal({
               value: datos[campo.nombre],
               onChange: cambiarCampo,
               maxLength: campo.maxLength,
+              disabled: guardando,
               className:
                 `form-control jugoseo-input ${
                   errores[campo.nombre] ? 'is-invalid' : ''
@@ -204,6 +249,7 @@ export default function ProductoModal({
               }`}
               value={datos.categoria}
               onChange={cambiarCampo}
+              disabled={guardando}
               aria-invalid={Boolean(errores.categoria)}
               aria-describedby="errorProductoCategoria"
             >
@@ -212,7 +258,10 @@ export default function ProductoModal({
               </option>
 
               {CATEGORIAS_VALIDAS.map((categoria) => (
-                <option value={categoria} key={categoria}>
+                <option
+                  value={categoria}
+                  key={categoria}
+                >
                   {categoria}
                 </option>
               ))}
@@ -230,7 +279,8 @@ export default function ProductoModal({
             <button
               type="button"
               className="btn btn-outline-light"
-              onClick={cerrar}
+              onClick={solicitarCierre}
+              disabled={guardando}
             >
               Cancelar
             </button>
@@ -238,8 +288,14 @@ export default function ProductoModal({
             <button
               type="submit"
               className="btn jugoseo-btn-login"
+              disabled={guardando}
+              aria-busy={guardando}
             >
-              {esNuevo ? 'Crear producto' : 'Guardar cambios'}
+              {guardando
+                ? 'Guardando…'
+                : esNuevo
+                  ? 'Crear producto'
+                  : 'Guardar cambios'}
             </button>
           </div>
         </form>

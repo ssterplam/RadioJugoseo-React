@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+
 import Modal from 'react-bootstrap/Modal'
 
 import { formatearCLP } from '../utils/formatoMoneda.js'
@@ -11,20 +12,43 @@ export default function ConfirmarPedidoModal({
   const [error, setError] = useState('')
   const [guardando, setGuardando] = useState(false)
 
+  const guardandoRef = useRef(false)
+
   const total = items.reduce(
     (acumulado, item) =>
       acumulado + item.precio * item.cantidad,
     0,
   )
 
-  function enviar() {
+  function solicitarCierre() {
+    if (guardandoRef.current) {
+      return
+    }
+
+    cerrar()
+  }
+
+  async function enviar() {
+    if (guardandoRef.current) {
+      return
+    }
+
+    guardandoRef.current = true
     setGuardando(true)
     setError('')
 
-    const resultado = confirmar()
+    try {
+      const resultado = await confirmar()
 
-    if (!resultado.ok) {
-      setError(resultado.mensaje)
+      if (!resultado.ok) {
+        setError(resultado.mensaje)
+      }
+    } catch {
+      setError(
+        'No se pudo confirmar el pedido. Inténtalo nuevamente.',
+      )
+    } finally {
+      guardandoRef.current = false
       setGuardando(false)
     }
   }
@@ -32,7 +56,7 @@ export default function ConfirmarPedidoModal({
   return (
     <Modal
       show
-      onHide={cerrar}
+      onHide={solicitarCierre}
       centered
       contentClassName="jugoseo-modal"
       aria-labelledby="tituloConfirmarPedido"
@@ -48,7 +72,7 @@ export default function ConfirmarPedidoModal({
         <button
           type="button"
           className="btn-close btn-close-white"
-          onClick={cerrar}
+          onClick={solicitarCierre}
           aria-label="Cerrar"
           disabled={guardando}
         />
@@ -56,14 +80,18 @@ export default function ConfirmarPedidoModal({
 
       <Modal.Body>
         {error && (
-          <div className="alert alert-danger" role="alert">
+          <div
+            className="alert alert-danger"
+            role="alert"
+          >
             {error}
           </div>
         )}
 
         <p className="jugoseo-card-texto">
-          Revisa los artículos antes de confirmar. Al continuar,
-          se descontará el stock disponible y tu carrito se vaciará.
+          Revisa los artículos antes de confirmar. Si la operación
+          se completa correctamente, se descontará el stock
+          disponible y tu carrito se vaciará.
         </p>
 
         <ul className="list-unstyled mb-3">
@@ -97,7 +125,7 @@ export default function ConfirmarPedidoModal({
           <button
             type="button"
             className="btn btn-outline-light"
-            onClick={cerrar}
+            onClick={solicitarCierre}
             disabled={guardando}
           >
             Cancelar
@@ -108,8 +136,11 @@ export default function ConfirmarPedidoModal({
             className="btn jugoseo-btn-login"
             onClick={enviar}
             disabled={guardando}
+            aria-busy={guardando}
           >
-            Confirmar pedido
+            {guardando
+              ? 'Confirmando…'
+              : 'Confirmar pedido'}
           </button>
         </div>
       </Modal.Body>

@@ -1,4 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 
 import {
   cancelarPedido,
@@ -8,8 +13,8 @@ import {
 import { formatearCLP } from '../utils/formatoMoneda.js'
 
 const ETIQUETAS_ESTADO = {
-  Pendiente: 'warning',
-  'En preparación': 'info',
+  Pendiente: 'warning text-dark',
+  'En preparación': 'info text-dark',
   Enviado: 'primary',
   Entregado: 'success',
   Cancelado: 'danger',
@@ -50,10 +55,35 @@ function cargarPedidos() {
   }
 }
 
+function mensajeError(error) {
+  const mensajes = {
+    SESION_REQUERIDA:
+      'Debes volver a iniciar sesión.',
+    OPERACION_NO_PERMITIDA:
+      'No tienes permiso para cancelar este pedido.',
+    PEDIDO_NO_DISPONIBLE:
+      'El pedido ya no está disponible.',
+    PEDIDO_NO_CANCELABLE:
+      'El pedido ya no puede cancelarse. Revisa su estado actual.',
+    BLOQUEO_NO_DISPONIBLE:
+      'No se puede coordinar el almacenamiento. ' +
+      'Utiliza localhost o HTTPS en un navegador compatible.',
+    DATOS_INVALIDOS:
+      'No se pudo calcular la devolución de stock. ' +
+      'El pedido no fue cancelado.',
+  }
+
+  return mensajes[error.codigo] ||
+    'No se pudo cancelar el pedido. Inténtalo nuevamente.'
+}
+
 export default function HistorialPedidos() {
   const [estado, setEstado] = useState(cargarPedidos)
   const [aviso, setAviso] = useState(null)
   const [pedidoAbierto, setPedidoAbierto] = useState(null)
+  const [cancelandoId, setCancelandoId] = useState(null)
+
+  const cancelandoRef = useRef(false)
 
   const recargar = useCallback(() => {
     setEstado(cargarPedidos())
@@ -80,7 +110,11 @@ export default function HistorialPedidos() {
     }
   }, [recargar])
 
-  function solicitarCancelacion(pedido) {
+  async function solicitarCancelacion(pedido) {
+    if (cancelandoRef.current) {
+      return
+    }
+
     const motivo = window.prompt(
       `¿Por qué deseas cancelar el pedido #${pedido.id}? ` +
         'Puedes dejar el motivo vacío.',
@@ -90,20 +124,32 @@ export default function HistorialPedidos() {
       return
     }
 
+    cancelandoRef.current = true
+    setCancelandoId(pedido.id)
+    setAviso(null)
+
     try {
-      cancelarPedido(pedido.id, motivo)
+      await cancelarPedido(pedido.id, motivo)
 
       recargar()
+
       setAviso({
         tipo: 'success',
-        texto: `El pedido #${pedido.id} fue cancelado. El stock fue devuelto al catálogo.`,
+        texto:
+          `El pedido #${pedido.id} fue cancelado. ` +
+          'Se repusieron las unidades de los productos ' +
+          'que siguen en el catálogo.',
       })
     } catch (error) {
+      recargar()
+
       setAviso({
         tipo: 'danger',
-        texto: error.message ||
-          'No se pudo cancelar el pedido. Inténtalo nuevamente.',
+        texto: mensajeError(error),
       })
+    } finally {
+      cancelandoRef.current = false
+      setCancelandoId(null)
     }
   }
 
@@ -144,6 +190,7 @@ export default function HistorialPedidos() {
               )
 
               const abierto = pedidoAbierto === pedido.id
+              const cancelando = cancelandoId === pedido.id
 
               return (
                 <article
@@ -157,7 +204,8 @@ export default function HistorialPedidos() {
                       </h2>
 
                       <p className="jugoseo-card-texto mb-0">
-                        Creado: {formatearFecha(pedido.fechaCreacion)}
+                        Creado:{' '}
+                        {formatearFecha(pedido.fechaCreacion)}
                       </p>
 
                       <p className="jugoseo-card-texto mb-0">
@@ -168,7 +216,10 @@ export default function HistorialPedidos() {
 
                     <div className="text-end">
                       <span
-                        className={`badge bg-${ETIQUETAS_ESTADO[pedido.estado] || 'secondary'}`}
+                        className={`badge bg-${
+                          ETIQUETAS_ESTADO[pedido.estado] ||
+                          'secondary'
+                        }`}
                       >
                         {pedido.estado}
                       </span>
@@ -183,11 +234,11 @@ export default function HistorialPedidos() {
                     <button
                       type="button"
                       className="btn btn-sm btn-outline-light"
-                      onClick={() =>
+                      onClick={() => {
                         setPedidoAbierto(
                           abierto ? null : pedido.id,
                         )
-                      }
+                      }}
                       aria-expanded={abierto}
                     >
                       {abierto ? 'Ocultar detalle' : 'Ver detalle'}
@@ -200,8 +251,12 @@ export default function HistorialPedidos() {
                         onClick={() =>
                           solicitarCancelacion(pedido)
                         }
+                        disabled={cancelandoId !== null}
+                        aria-busy={cancelando}
                       >
-                        Cancelar pedido
+                        {cancelando
+                          ? 'Cancelando…'
+                          : 'Cancelar pedido'}
                       </button>
                     )}
                   </div>
@@ -227,7 +282,7 @@ export default function HistorialPedidos() {
                       </ul>
 
                       {pedido.motivoCancelacion && (
-                        <p className="jugoseo-card-texto mb-0">
+                        <p className="jugoseo-card-texto text-break mb-0">
                           Motivo de cancelación:{' '}
                           {pedido.motivoCancelacion}
                         </p>

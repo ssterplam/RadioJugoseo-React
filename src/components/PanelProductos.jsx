@@ -44,7 +44,7 @@ export default function PanelProductos() {
   const [productoEditando, setProductoEditando] = useState(null)
   const [aviso, setAviso] = useState(null)
 
-  function guardar(datos) {
+  async function guardar(datos) {
     if (!productoEditando) {
       return false
     }
@@ -53,8 +53,12 @@ export default function PanelProductos() {
 
     try {
       const actualizados = creando
-        ? crearProducto(datos)
-        : actualizarProducto(productoEditando.id, datos)
+        ? await crearProducto(datos)
+        : await actualizarProducto(
+            productoEditando.id,
+            datos,
+            productoEditando,
+          )
 
       setEstado({
         productos: actualizados,
@@ -72,11 +76,13 @@ export default function PanelProductos() {
 
       return true
     } catch {
+      setEstado(cargarPanel())
+
       return false
     }
   }
 
-  function solicitarEliminacion(producto) {
+  async function solicitarEliminacion(producto) {
     const confirmado = window.confirm(
       `¿Eliminar "${producto.nombre}" del catálogo? ` +
         'Esta acción no se puede deshacer desde la aplicación.',
@@ -87,7 +93,7 @@ export default function PanelProductos() {
     }
 
     try {
-      const actualizados = eliminarProductoAdministrativo(
+      const actualizados = await eliminarProductoAdministrativo(
         producto.id,
       )
 
@@ -101,12 +107,21 @@ export default function PanelProductos() {
         texto: 'Producto eliminado.',
       })
     } catch (error) {
+      setEstado(cargarPanel())
+
+      const mensajes = {
+        PRODUCTO_EN_CARRITO:
+          'Quita primero este producto del carrito guardado ' +
+          'antes de eliminarlo del catálogo.',
+        BLOQUEO_NO_DISPONIBLE:
+          'No se puede coordinar el almacenamiento. ' +
+          'Utiliza localhost o HTTPS en un navegador compatible.',
+      }
+
       setAviso({
         tipo: 'danger',
-        texto:
-          error.codigo === 'PRODUCTO_EN_CARRITO'
-            ? 'Quita primero este producto del carrito guardado antes de eliminarlo del catálogo.'
-            : 'No se pudo eliminar el producto. Inténtalo nuevamente.',
+        texto: mensajes[error.codigo] ||
+          'No se pudo eliminar el producto. Inténtalo nuevamente.',
       })
     }
   }
@@ -169,7 +184,9 @@ export default function PanelProductos() {
                     <td>{producto.codigo}</td>
                     <td>{producto.nombre}</td>
                     <td>{producto.categoria}</td>
-                    <td>{formatearCLP(producto.precio)}</td>
+                    <td>
+                      {formatearCLP(producto.precio)}
+                    </td>
 
                     <td>
                       {producto.stock <= 5 ? (

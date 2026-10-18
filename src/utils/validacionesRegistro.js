@@ -10,7 +10,7 @@ export function validarRun(runIngresado) {
     return 'El RUN es obligatorio.'
   }
 
-  if (/[.\-]/.test(run)) {
+  if (/[.-]/.test(run)) {
     return 'El RUN no debe llevar puntos ni guion.'
   }
 

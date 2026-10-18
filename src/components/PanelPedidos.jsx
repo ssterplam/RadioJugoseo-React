@@ -1,4 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 
 import {
   cancelarPedido,
@@ -24,6 +29,10 @@ const ESTADOS_CANCELABLES = [
 ]
 
 function formatearFecha(valor) {
+  if (!valor) {
+    return '—'
+  }
+
   const fecha = new Date(valor)
 
   if (Number.isNaN(fecha.getTime())) {
@@ -64,6 +73,11 @@ function mensajeError(error) {
       'El pedido ya no puede cancelarse. Revisa su estado actual.',
     TRANSICION_INVALIDA:
       'El estado cambió o la transición no es válida. Revisa el pedido.',
+    BLOQUEO_NO_DISPONIBLE:
+      'No se puede coordinar el almacenamiento. ' +
+      'Utiliza localhost o HTTPS en un navegador compatible.',
+    DATOS_INVALIDOS:
+      'No se pudo completar la operación porque los datos no son válidos.',
   }
 
   return mensajes[error.codigo] ||
@@ -74,6 +88,9 @@ export default function PanelPedidos() {
   const [estado, setEstado] = useState(cargarPedidos)
   const [aviso, setAviso] = useState(null)
   const [pedidoAbierto, setPedidoAbierto] = useState(null)
+  const [operacion, setOperacion] = useState(null)
+
+  const procesandoRef = useRef(false)
 
   const recargar = useCallback(() => {
     setEstado(cargarPedidos())
@@ -106,7 +123,11 @@ export default function PanelPedidos() {
     }
   }, [recargar])
 
-  function avanzarPedido(pedido) {
+  async function avanzarPedido(pedido) {
+    if (procesandoRef.current) {
+      return
+    }
+
     const siguiente = obtenerSiguienteEstado(pedido.estado)
 
     if (!siguiente) {
@@ -122,8 +143,17 @@ export default function PanelPedidos() {
       return
     }
 
+    procesandoRef.current = true
+
+    setOperacion({
+      id: pedido.id,
+      tipo: 'avanzar',
+    })
+
+    setAviso(null)
+
     try {
-      cambiarEstadoPedido(pedido.id, siguiente)
+      await cambiarEstadoPedido(pedido.id, siguiente)
 
       recargar()
 
@@ -139,10 +169,17 @@ export default function PanelPedidos() {
         tipo: 'danger',
         texto: mensajeError(error),
       })
+    } finally {
+      procesandoRef.current = false
+      setOperacion(null)
     }
   }
 
-  function solicitarCancelacion(pedido) {
+  async function solicitarCancelacion(pedido) {
+    if (procesandoRef.current) {
+      return
+    }
+
     const motivo = window.prompt(
       `Cancelar pedido #${pedido.id}. ` +
         'Se devolverán las unidades de los productos ' +
@@ -154,8 +191,17 @@ export default function PanelPedidos() {
       return
     }
 
+    procesandoRef.current = true
+
+    setOperacion({
+      id: pedido.id,
+      tipo: 'cancelar',
+    })
+
+    setAviso(null)
+
     try {
-      cancelarPedido(pedido.id, motivo)
+      await cancelarPedido(pedido.id, motivo)
 
       recargar()
 
@@ -173,8 +219,13 @@ export default function PanelPedidos() {
         tipo: 'danger',
         texto: mensajeError(error),
       })
+    } finally {
+      procesandoRef.current = false
+      setOperacion(null)
     }
   }
+
+  const procesando = operacion !== null
 
   return (
     <section className="pagina-interna">
@@ -195,6 +246,7 @@ export default function PanelPedidos() {
             type="button"
             className="btn btn-outline-light"
             onClick={recargar}
+            disabled={procesando}
           >
             Actualizar
           </button>
@@ -229,7 +281,17 @@ export default function PanelPedidos() {
               )
 
               const abierto = pedidoAbierto === pedido.id
-              const detalleId = `detalle-pedido-admin-${pedido.id}`
+
+              const avanzando =
+                operacion?.id === pedido.id &&
+                operacion?.tipo === 'avanzar'
+
+              const cancelando =
+                operacion?.id === pedido.id &&
+                operacion?.tipo === 'cancelar'
+
+              const detalleId =
+                `detalle-pedido-admin-${pedido.id}`
 
               return (
                 <article
@@ -293,8 +355,12 @@ export default function PanelPedidos() {
                         type="button"
                         className="btn btn-sm jugoseo-btn-login"
                         onClick={() => avanzarPedido(pedido)}
+                        disabled={procesando}
+                        aria-busy={avanzando}
                       >
-                        Pasar a {siguiente}
+                        {avanzando
+                          ? 'Actualizando…'
+                          : `Pasar a ${siguiente}`}
                       </button>
                     )}
 
@@ -305,8 +371,12 @@ export default function PanelPedidos() {
                         onClick={() =>
                           solicitarCancelacion(pedido)
                         }
+                        disabled={procesando}
+                        aria-busy={cancelando}
                       >
-                        Cancelar pedido
+                        {cancelando
+                          ? 'Cancelando…'
+                          : 'Cancelar pedido'}
                       </button>
                     )}
                   </div>
@@ -327,10 +397,13 @@ export default function PanelPedidos() {
                           {pedido.articulos.map((articulo) => (
                             <tr key={articulo.id}>
                               <td>{articulo.nombre}</td>
+
                               <td>
                                 {formatearCLP(articulo.precio)}
                               </td>
+
                               <td>{articulo.cantidad}</td>
+
                               <td>
                                 {formatearCLP(articulo.subtotal)}
                               </td>

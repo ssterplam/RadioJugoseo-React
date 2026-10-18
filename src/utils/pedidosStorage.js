@@ -4,6 +4,7 @@ import {
   validarLista as validarCatalogo,
 } from './productosStorage.js'
 import {
+  conBloqueoComercio,  
   guardarComercio,
   leerComercio,
 } from './comercioStorage.js'
@@ -307,7 +308,7 @@ export function obtenerResumenPedido() {
   return prepararResumen(estado, sesion)
 }
 
-export function confirmarPedido(resumenEsperado) {
+function confirmarPedidoInterno(resumenEsperado) {
   const sesion = exigirSesion()
   const estado = leerEstadoValidado()
 
@@ -382,13 +383,13 @@ export function confirmarPedido(resumenEsperado) {
   return nuevoPedido
 }
 
-export function cambiarEstadoPedido(id, nuevoEstado) {
+function cambiarEstadoPedidoInterno(id, nuevoEstado) {
   const sesion = exigirSesion()
 
   exigirAdministrador(sesion)
 
   if (nuevoEstado === 'Cancelado') {
-    return cancelarPedido(id, '').pedidos
+    return cancelarPedidoInterno(id, '').pedidos
   }
 
   const estado = leerEstadoValidado()
@@ -431,7 +432,7 @@ export function cambiarEstadoPedido(id, nuevoEstado) {
   return pedidos
 }
 
-export function cancelarPedido(id, motivo = '') {
+function cancelarPedidoInterno(id, motivo = '') {
   const sesion = exigirSesion()
   const estado = leerEstadoValidado()
   const pedido = obtenerObjetivo(estado, id, sesion)
@@ -492,4 +493,22 @@ export function cancelarPedido(id, motivo = '') {
     pedidos,
     esAdministrador: sesion.rol === 'Administrador',
   }
+}
+
+export function confirmarPedido(resumenEsperado) {
+  return conBloqueoComercio(() =>
+    confirmarPedidoInterno(resumenEsperado),
+  )
+}
+
+export function cambiarEstadoPedido(id, nuevoEstado) {
+  return conBloqueoComercio(() =>
+    cambiarEstadoPedidoInterno(id, nuevoEstado),
+  )
+}
+
+export function cancelarPedido(id, motivo = '') {
+  return conBloqueoComercio(() =>
+    cancelarPedidoInterno(id, motivo),
+  )
 }

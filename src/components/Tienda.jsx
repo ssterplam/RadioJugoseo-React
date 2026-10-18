@@ -3,14 +3,24 @@ import {
   useEffect,
   useState,
 } from 'react'
+
 import ProductoCard from './ProductoCard.jsx'
 import CarritoPanel from './CarritoPanel.jsx'
-import { guardarCarrito } from '../utils/carritoStorage.js'
+import ConfirmarPedidoModal from './ConfirmarPedidoModal.jsx'
+
+import {
+  guardarCarrito,
+} from '../utils/carritoStorage.js'
+
+import {
+  conBloqueoComercio,
+} from '../utils/comercioStorage.js'
+
 import {
   leerEstadoTienda,
   reconciliarCarrito,
 } from '../utils/sincronizarCarrito.js'
-import ConfirmarPedidoModal from './ConfirmarPedidoModal.jsx'
+
 import {
   confirmarPedido,
   obtenerResumenPedido,
@@ -41,30 +51,10 @@ export default function Tienda() {
   }, [])
 
   const sincronizar = useCallback(() => {
-    let siguiente = leerEstadoTienda()
-
-    if (
-      !siguiente.errorCatalogo &&
-      !siguiente.errorCarrito &&
-      siguiente.requiereGuardado
-    ) {
-      try {
-        guardarCarrito(siguiente.items)
-
-        siguiente = {
-          ...siguiente,
-          requiereGuardado: false,
-        }
-      } catch {
-        siguiente = {
-          ...siguiente,
-          errorCarrito:
-            'No se pudo guardar la actualización del carrito. Inténtalo nuevamente.',
-        }
-      }
-    }
+    const siguiente = leerEstadoTienda()
 
     aplicarEstado(siguiente)
+
     return siguiente
   }, [aplicarEstado])
 
@@ -85,8 +75,6 @@ export default function Tienda() {
       'storage',
       actualizarDesdeOtraPestana,
     )
-
-    sincronizar()
 
     return () => {
       window.removeEventListener('focus', sincronizar)
@@ -111,43 +99,42 @@ export default function Tienda() {
     setAviso({ texto, tipo })
   }
 
-  function ejecutarOperacion(transformar, mensaje) {
-    const base = sincronizar()
-
-    if (base.errorCatalogo || base.errorCarrito) {
-      notificar(
-        'No se pudo comprobar el carrito. Inténtalo nuevamente.',
-        'danger',
-      )
-      return false
-    }
-
+  async function ejecutarOperacion(transformar, mensaje) {
     try {
-      const nuevosItems = transformar(base)
+      await conBloqueoComercio(() => {
+        const base = leerEstadoTienda()
 
-      const resultado = reconciliarCarrito(
-        nuevosItems,
-        base.productos,
-      )
+        if (base.errorCatalogo || base.errorCarrito) {
+          rechazarOperacion(
+            'No se pudo comprobar el carrito. Inténtalo nuevamente.',
+          )
+        }
 
-      guardarCarrito(resultado.items)
+        const nuevosItems = transformar(base)
 
-      aplicarEstado({
-        ...base,
-        ...resultado,
-        cambios: [...base.cambios, ...resultado.cambios],
-        requiereGuardado: false,
+        const resultado = reconciliarCarrito(
+          nuevosItems,
+          base.productos,
+        )
+
+        guardarCarrito(resultado.items)
       })
 
+      sincronizar()
       notificar(mensaje, 'success')
+
       return true
     } catch (error) {
+      sincronizar()
+
       notificar(
-        error.esAvisoTienda
+        error.esAvisoTienda ||
+        error.codigo === 'BLOQUEO_NO_DISPONIBLE'
           ? error.message
           : 'No se pudo guardar el cambio. Inténtalo nuevamente.',
         'danger',
       )
+
       return false
     }
   }
@@ -187,7 +174,10 @@ export default function Tienda() {
       if (existente) {
         return base.items.map((item) =>
           item.id === id
-            ? { ...item, cantidad: nuevaCantidad }
+            ? {
+                ...item,
+                cantidad: nuevaCantidad,
+              }
             : item,
         )
       }
@@ -205,7 +195,7 @@ export default function Tienda() {
   }
 
   function cambiarCantidad(id, delta) {
-    ejecutarOperacion((base) => {
+    return ejecutarOperacion((base) => {
       if (![1, -1].includes(delta)) {
         rechazarOperacion('Operación no válida.')
       }
@@ -215,7 +205,9 @@ export default function Tienda() {
       )
 
       if (!item) {
-        rechazarOperacion('El artículo ya no está en el carrito.')
+        rechazarOperacion(
+          'El artículo ya no está en el carrito.',
+        )
       }
 
       const nuevaCantidad = item.cantidad + delta
@@ -244,21 +236,24 @@ export default function Tienda() {
 
       return base.items.map((producto) =>
         producto.id === id
-          ? { ...producto, cantidad: nuevaCantidad }
+          ? {
+              ...producto,
+              cantidad: nuevaCantidad,
+            }
           : producto,
       )
     }, 'Cantidad actualizada.')
   }
 
   function eliminarProducto(id) {
-    ejecutarOperacion(
+    return ejecutarOperacion(
       (base) =>
         base.items.filter((item) => item.id !== id),
       'Producto eliminado del carrito.',
     )
   }
 
-  function vaciarCarrito() {
+  async function vaciarCarrito() {
     if (
       estado.errorCarrito &&
       !window.confirm(
@@ -270,12 +265,19 @@ export default function Tienda() {
     }
 
     try {
-      guardarCarrito([])
+      await conBloqueoComercio(() => {
+        guardarCarrito([])
+      })
+
       sincronizar()
       notificar('Carrito vaciado.', 'success')
-    } catch {
+    } catch (error) {
+      sincronizar()
+
       notificar(
-        'No se pudo vaciar el carrito. Inténtalo nuevamente.',
+        error.codigo === 'BLOQUEO_NO_DISPONIBLE'
+          ? error.message
+          : 'No se pudo vaciar el carrito. Inténtalo nuevamente.',
         'danger',
       )
     }
@@ -301,6 +303,9 @@ export default function Tienda() {
         'Revisa los artículos y vuelve a abrir la confirmación.',
       DATOS_INVALIDOS:
         'No se pudo preparar el pedido. Revisa el carrito.',
+      BLOQUEO_NO_DISPONIBLE:
+        'No se puede coordinar el almacenamiento. ' +
+        'Utiliza localhost o HTTPS en un navegador compatible.',
     }
 
     return mensajes[error.codigo] ||
@@ -337,9 +342,9 @@ export default function Tienda() {
     }
   }
 
-  function confirmarCompra() {
+  async function confirmarCompra() {
     try {
-      const pedido = confirmarPedido(resumenPedido)
+      const pedido = await confirmarPedido(resumenPedido)
 
       setResumenPedido(null)
       setMostrarCarrito(false)
