@@ -1,20 +1,24 @@
 import {
   programas as programasIniciales,
 } from '../data/programas.js'
-
 import { leerSesion } from '../data/sesion.js'
-
 import {
   normalizarCorreo,
   validarCorreoParaRol,
 } from './validacionesCorreo.js'
-
 import {
   separarLineas,
   validarEdicionPrograma,
 } from './validacionesPrograma.js'
-
-import { obtenerLocutores } from './locutoresStorage.js'
+import {
+  guardarEmision,
+  notificarCambioEmision,
+  obtenerEmision,
+} from './emisionStorage.js'
+import {
+  obtenerLocutores,
+  tieneLocutorDisponible,
+} from './locutoresStorage.js'
 
 /* Qué se está definiendo en este archivo:
 * locutorCorreo: null: programa sin asignar.
@@ -120,6 +124,12 @@ export function asignarLocutor(programaId, correoIngresado) {
 
   if (!sesion || sesion.rol !== 'Administrador') {
     throw new Error('Operación no permitida.')
+  }
+
+  const emision = obtenerEmision()
+
+  if (emision?.programaId === programaId) {
+    throw new Error('Finaliza la emisión antes de reasignar el programa.')
   }
 
   const correo = normalizarCorreo(correoIngresado)
@@ -234,5 +244,82 @@ export function actualizarContenidoPrograma(programaId, datos) {
     JSON.stringify(actualizados),
   )
 
+  notificarCambioEmision()
+
   return actualizados
+}
+
+function obtenerSesionDeEmision() {
+  const sesion = leerSesion()
+
+  if (
+    !sesion ||
+    !['Locutor', 'Administrador'].includes(sesion.rol)
+  ) {
+    throw new Error('Operación no permitida.')
+  }
+
+  return sesion
+}
+
+function puedeControlarPrograma(sesion, programa) {
+  if (sesion.rol === 'Administrador') {
+    return true
+  }
+
+  return (
+    programa &&
+    programa.locutorCorreo !== null &&
+    normalizarCorreo(programa.locutorCorreo) ===
+      normalizarCorreo(sesion.correo)
+  )
+}
+
+export function iniciarEmision(programaId) {
+  const sesion = obtenerSesionDeEmision()
+
+  const programa = obtenerProgramas().find(
+    (item) => item.id === programaId,
+  )
+
+  if (!programa || !puedeControlarPrograma(sesion, programa)) {
+    throw new Error('Operación no permitida.')
+  }
+
+  if (!tieneLocutorDisponible(programa.locutorCorreo)) {
+    throw new Error(
+      'El programa no tiene un locutor disponible asignado.',
+    )
+  }
+
+  if (obtenerEmision() !== null) {
+    throw new Error('Ya existe una emisión activa.')
+  }
+
+  guardarEmision({
+    programaId: programa.id,
+    iniciadaPor: normalizarCorreo(sesion.correo),
+    inicio: new Date().toISOString(),
+  })
+}
+
+export function finalizarEmision(programaId) {
+  const sesion = obtenerSesionDeEmision()
+  const emision = obtenerEmision()
+
+  if (!emision || emision.programaId !== programaId) {
+    throw new Error('La emisión ya no está activa.')
+  }
+
+  if (sesion.rol !== 'Administrador') {
+    const programa = obtenerProgramas().find(
+      (item) => item.id === programaId,
+    )
+
+    if (!puedeControlarPrograma(sesion, programa)) {
+      throw new Error('Operación no permitida.')
+    }
+  }
+
+  guardarEmision(null)
 }

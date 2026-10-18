@@ -49,3 +49,15 @@ export function obtenerLocutores() {
 
   return [...locutores.values()]
 }
+
+export function tieneLocutorDisponible(correoIngresado) {
+  const correo = normalizarCorreo(correoIngresado)
+
+  if (!correo) {
+    return false
+  }
+
+  return obtenerLocutores().some(
+    (locutor) => locutor.correo === correo,
+  )
+}

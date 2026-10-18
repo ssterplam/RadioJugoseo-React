@@ -5,6 +5,9 @@ import {
 } from 'react-router-dom'
 
 import EditarProgramaModal from './EditarProgramaModal.jsx'
+import ControlesEmision from './ControlesEmision.jsx'
+
+import useEmision from '../hooks/useEmision.js'
 
 import {
   actualizarContenidoPrograma,
@@ -50,6 +53,12 @@ function cargarPanel() {
 
 export default function PanelProgramas() {
   const { sesion } = useOutletContext()
+
+  const {
+    emision,
+    programa: programaEnEmision,
+    error: errorEmision,
+  } = useEmision()
 
   const [estado, setEstado] = useState(cargarPanel)
   const [aviso, setAviso] = useState(null)
@@ -143,6 +152,20 @@ export default function PanelProgramas() {
           </div>
         )}
 
+        {errorEmision ? (
+          <div className="alert alert-danger" role="alert">
+            {errorEmision}
+          </div>
+        ) : (
+          <div className="alert alert-info" role="status">
+            {emision
+              ? `Emisión simulada activa: ${
+                  programaEnEmision?.nombre || 'Programa no disponible'
+                }.`
+              : 'No hay una emisión simulada activa.'}
+          </div>
+        )}
+
         {estado.error ? (
           <div className="alert alert-danger" role="alert">
             {estado.error}
@@ -182,6 +205,10 @@ export default function PanelProgramas() {
                         id={`locutor-${programa.id}`}
                         className="form-select jugoseo-input"
                         value={programa.locutorCorreo || ''}
+                        disabled={
+                          Boolean(errorEmision) ||
+                          emision?.programaId === programa.id
+                        }
                         onChange={(evento) =>
                           cambiarAsignacion(
                             programa.id,
@@ -241,6 +268,12 @@ export default function PanelProgramas() {
                       Ver ficha
                     </Link>
                   </div>
+
+                  <ControlesEmision
+                    programa={programa}
+                    emision={emision}
+                    errorEmision={errorEmision}
+                  />
                 </article>
               </div>
             ))}
@@ -248,8 +281,8 @@ export default function PanelProgramas() {
         )}
 
         <p className="jugoseo-card-texto mt-4">
-          Los controles de emisión se incorporarán
-          en el siguiente bloque.
+          El estado de emisión es una simulación local.
+          No inicia ni detiene la transmisión de audio.
         </p>
 
         {programaEditando && (

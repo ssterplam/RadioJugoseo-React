@@ -1,8 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
+import useEmision from '../hooks/useEmision.js'
 
 const STREAM = 'https://stream.zeno.fm/f3wvbbqmdg8uv'
 
 export default function ReproductorRadio() {
+  const {
+  emision,
+  programa: programaEnEmision,
+  error: errorEmision,
+  } = useEmision()
   const audioRef = useRef(null)
   const timeoutRef = useRef(null)
 
@@ -113,11 +119,19 @@ export default function ReproductorRadio() {
       >
         <div className="titulo">
           <span className="jugoseo-live-dot" />
-          Jugoseo en vivo
+          {programaEnEmision?.nombre || 'Jugoseo en vivo'}
         </div>
 
         <div className="subtitulo" aria-live="polite">
           {estado}
+        </div>
+
+        <div className="subtitulo" aria-live="polite">
+          {errorEmision
+            ? 'Estado de programa no disponible'
+            : emision
+              ? 'Programa en vivo · simulación'
+              : 'Sin programa activo · simulación'}
         </div>
       </div>
 
