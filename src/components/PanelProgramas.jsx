@@ -4,7 +4,10 @@ import {
   useOutletContext,
 } from 'react-router-dom'
 
+import EditarProgramaModal from './EditarProgramaModal.jsx'
+
 import {
+  actualizarContenidoPrograma,
   asignarLocutor,
   obtenerProgramas,
 } from '../utils/programasStorage.js'
@@ -15,9 +18,6 @@ import { leerSesion } from '../data/sesion.js'
 import {
   normalizarCorreo,
 } from '../utils/validacionesCorreo.js'
-
-/* Administrador: ve todos los programas y puede asignarlos.
-* Locutor: ve únicamente sus programas y no puede cambiar la asignación. */
 
 function cargarPanel() {
   try {
@@ -53,6 +53,7 @@ export default function PanelProgramas() {
 
   const [estado, setEstado] = useState(cargarPanel)
   const [aviso, setAviso] = useState(null)
+  const [programaEditando, setProgramaEditando] = useState(null)
 
   const esAdministrador = sesion.rol === 'Administrador'
   const correoActual = normalizarCorreo(sesion.correo)
@@ -89,6 +90,35 @@ export default function PanelProgramas() {
     }
   }
 
+  function guardarEdicion(datos) {
+    if (!programaEditando) {
+      return false
+    }
+
+    try {
+      const actualizados = actualizarContenidoPrograma(
+        programaEditando.id,
+        datos,
+      )
+
+      setEstado((actual) => ({
+        ...actual,
+        programas: actualizados,
+      }))
+
+      setProgramaEditando(null)
+
+      setAviso({
+        tipo: 'success',
+        texto: 'Programa actualizado.',
+      })
+
+      return true
+    } catch {
+      return false
+    }
+  }
+
   return (
     <section className="pagina-interna">
       <div className="container">
@@ -100,8 +130,8 @@ export default function PanelProgramas() {
 
         <p className="jugoseo-card-texto">
           {esAdministrador
-            ? 'Selecciona la cuenta responsable de cada programa. Los cambios se guardan al seleccionar.'
-            : 'Estos son los programas asignados a tu cuenta.'}
+            ? 'Administra el contenido y la asignación de los programas.'
+            : 'Consulta y edita tus programas asignados.'}
         </p>
 
         {aviso && (
@@ -192,12 +222,25 @@ export default function PanelProgramas() {
                     </p>
                   )}
 
-                  <Link
-                    to={`/app/programas/${programa.id}`}
-                    className="jugoseo-link"
-                  >
-                    Ver ficha del programa
-                  </Link>
+                  <div className="d-flex align-items-center flex-wrap gap-3">
+                    <button
+                      type="button"
+                      className="btn jugoseo-btn-login"
+                      onClick={() => {
+                        setAviso(null)
+                        setProgramaEditando(programa)
+                      }}
+                    >
+                      Editar programa
+                    </button>
+
+                    <Link
+                      to={`/app/programas/${programa.id}`}
+                      className="jugoseo-link"
+                    >
+                      Ver ficha
+                    </Link>
+                  </div>
                 </article>
               </div>
             ))}
@@ -205,9 +248,19 @@ export default function PanelProgramas() {
         )}
 
         <p className="jugoseo-card-texto mt-4">
-          La edición de contenido y los controles de emisión
-          se incorporarán en el siguiente bloque.
+          Los controles de emisión se incorporarán
+          en el siguiente bloque.
         </p>
+
+        {programaEditando && (
+          <EditarProgramaModal
+            key={programaEditando.id}
+            programa={programaEditando}
+            esAdministrador={esAdministrador}
+            cerrar={() => setProgramaEditando(null)}
+            guardar={guardarEdicion}
+          />
+        )}
       </div>
     </section>
   )

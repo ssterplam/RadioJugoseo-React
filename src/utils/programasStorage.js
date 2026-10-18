@@ -9,6 +9,11 @@ import {
   validarCorreoParaRol,
 } from './validacionesCorreo.js'
 
+import {
+  separarLineas,
+  validarEdicionPrograma,
+} from './validacionesPrograma.js'
+
 import { obtenerLocutores } from './locutoresStorage.js'
 
 /* Qué se está definiendo en este archivo:
@@ -146,6 +151,78 @@ export function asignarLocutor(programaId, correoIngresado) {
       ? {
           ...programa,
           locutorCorreo: correo || null,
+        }
+      : programa,
+  )
+
+  validarLista(actualizados)
+
+  localStorage.setItem(
+    CLAVE_PROGRAMAS,
+    JSON.stringify(actualizados),
+  )
+
+  return actualizados
+}
+
+export function actualizarContenidoPrograma(programaId, datos) {
+  const sesion = leerSesion()
+
+  if (
+    !sesion ||
+    !['Locutor', 'Administrador'].includes(sesion.rol)
+  ) {
+    throw new Error('Operación no permitida.')
+  }
+
+  const programas = obtenerProgramas()
+
+  const programaActual = programas.find(
+    (programa) => programa.id === programaId,
+  )
+
+  if (!programaActual) {
+    throw new Error('El programa no está disponible.')
+  }
+
+  const esAdministrador = sesion.rol === 'Administrador'
+
+  const esPropietario =
+    programaActual.locutorCorreo !== null &&
+    normalizarCorreo(programaActual.locutorCorreo) ===
+      normalizarCorreo(sesion.correo)
+
+  if (!esAdministrador && !esPropietario) {
+    throw new Error('Operación no permitida.')
+  }
+
+  const errores = validarEdicionPrograma(
+    datos,
+    esAdministrador,
+  )
+
+  if (Object.keys(errores).length > 0) {
+    throw new Error('Los datos ingresados no son válidos.')
+  }
+
+  const contenido = {
+    descripcion: datos.descripcion.trim(),
+    imagen: datos.imagen.trim(),
+    parrafos: separarLineas(datos.parrafos),
+    caracteristicas: separarLineas(datos.caracteristicas),
+  }
+
+  if (esAdministrador) {
+    contenido.nombre = datos.nombre.trim()
+    contenido.conductor = datos.conductor.trim()
+    contenido.horarioDetalle = datos.horarioDetalle.trim()
+  }
+
+  const actualizados = programas.map((programa) =>
+    programa.id === programaId
+      ? {
+          ...programa,
+          ...contenido,
         }
       : programa,
   )
