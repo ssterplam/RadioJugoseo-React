@@ -1,12 +1,14 @@
 import {
   CATEGORIAS_VALIDAS,
-  CLAVE_PRODUCTOS,
   PRODUCTOS_INICIALES,
 } from '../data/productos.js'
-
 import { leerSesion } from '../data/sesion.js'
 import { obtenerCarrito } from './carritoStorage.js'
 import { validarProducto } from './validacionesProducto.js'
+import {
+  guardarComercio,
+  leerComercio,
+} from './comercioStorage.js'
 
 const CLAVE_SECUENCIA = 'jugoseoUltimoIdProducto'
 
@@ -37,7 +39,7 @@ function exigirAdministrador() {
   }
 }
 
-function validarLista(productos) {
+export function validarLista(productos) {
   if (
     !Array.isArray(productos) ||
     !productos.every(esProductoValido)
@@ -64,31 +66,19 @@ function validarLista(productos) {
 }
 
 export function obtenerProductos() {
-  const guardados = localStorage.getItem(CLAVE_PRODUCTOS)
-
-  if (guardados === null) {
-    return PRODUCTOS_INICIALES.map((producto) => ({
-      ...producto,
-    }))
-  }
-
-  const productos = JSON.parse(guardados)
-
-  if (!Array.isArray(productos)) {
-    throw new Error('El catálogo guardado no es válido.')
-  }
-
-  return productos
+  return leerComercio().productos
 }
 
 export function guardarProductos(productos) {
   exigirAdministrador()
   validarLista(productos)
 
-  localStorage.setItem(
-    CLAVE_PRODUCTOS,
-    JSON.stringify(productos),
-  )
+  const estado = leerComercio()
+
+  guardarComercio({
+    ...estado,
+    productos,
+  })
 }
 
 export function obtenerProductosAdministrables() {

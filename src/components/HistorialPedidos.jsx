@@ -62,6 +62,7 @@ export default function HistorialPedidos() {
   useEffect(() => {
     function actualizar(evento) {
       if (
+        evento.key === 'jugoseoComercio' ||
         evento.key === 'jugoseoPedidos' ||
         evento.key === 'jugoseoProductos' ||
         evento.key === null

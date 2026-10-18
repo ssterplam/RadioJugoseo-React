@@ -70,6 +70,7 @@ export default function Tienda() {
   useEffect(() => {
     function actualizarDesdeOtraPestana(evento) {
       if (
+        evento.key === 'jugoseoComercio' ||
         evento.key === 'jugoseoProductos' ||
         evento.key === 'jugoseoCarrito' ||
         evento.key === null

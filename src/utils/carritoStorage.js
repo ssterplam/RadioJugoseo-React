@@ -1,4 +1,7 @@
-const CLAVE_CARRITO = 'jugoseoCarrito'
+import {
+  guardarComercio,
+  leerComercio,
+} from './comercioStorage.js'
 
 function esItemValido(item) {
   return (
@@ -28,23 +31,20 @@ function validarLista(items) {
 }
 
 export function obtenerCarrito() {
-  const guardado = localStorage.getItem(CLAVE_CARRITO)
+  const { carrito } = leerComercio()
 
-  if (guardado === null) {
-    return []
-  }
+  validarLista(carrito)
 
-  const items = JSON.parse(guardado)
-  validarLista(items)
-
-  return items
+  return carrito
 }
 
 export function guardarCarrito(items) {
   validarLista(items)
 
-  localStorage.setItem(
-    CLAVE_CARRITO,
-    JSON.stringify(items),
-  )
+  const estado = leerComercio()
+
+  guardarComercio({
+    ...estado,
+    carrito: items,
+  })
 }

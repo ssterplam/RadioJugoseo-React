@@ -1,12 +1,15 @@
 import { leerSesion } from '../data/sesion.js'
 
 import { obtenerCarrito } from './carritoStorage.js'
+
 import {
-  obtenerProductos,
+  validarLista as validarCatalogo,
 } from './productosStorage.js'
 
-const CLAVE_PEDIDOS = 'jugoseoPedidos'
-const CLAVE_SECUENCIA = 'jugoseoUltimoIdPedido'
+import {
+  guardarComercio,
+  leerComercio,
+} from './comercioStorage.js'
 
 export const ESTADOS_PEDIDO = [
   'Pendiente',
@@ -28,24 +31,40 @@ const SIGUIENTE_ESTADO = {
   Enviado: 'Entregado',
 }
 
-export function obtenerSiguienteEstado(estado) {
-  return SIGUIENTE_ESTADO[estado] || null
+function rechazar(codigo, mensaje) {
+  const error = new Error(mensaje)
+  error.codigo = codigo
+  throw error
 }
 
-function leerPedidosGuardados() {
-  const texto = localStorage.getItem(CLAVE_PEDIDOS)
+function exigirSesion() {
+  const sesion = leerSesion()
 
-  if (texto === null) {
-    return []
+  if (!sesion) {
+    rechazar(
+      'SESION_REQUERIDA',
+      'Debes volver a iniciar sesión.',
+    )
   }
 
-  const pedidos = JSON.parse(texto)
+  return sesion
+}
 
-  if (!Array.isArray(pedidos)) {
-    throw new Error('La lista de pedidos no es válida.')
+function exigirAdministrador(sesion) {
+  if (sesion.rol !== 'Administrador') {
+    rechazar(
+      'OPERACION_NO_PERMITIDA',
+      'Operación no permitida.',
+    )
   }
+}
 
-  return pedidos
+function fechaValida(valor) {
+  return (
+    typeof valor === 'string' &&
+    valor.trim() !== '' &&
+    Number.isFinite(Date.parse(valor))
+  )
 }
 
 function esArticuloValido(articulo) {
@@ -59,12 +78,16 @@ function esArticuloValido(articulo) {
     Number.isSafeInteger(articulo.precio) &&
     articulo.precio >= 0 &&
     Number.isSafeInteger(articulo.cantidad) &&
-    articulo.cantidad > 0
+    articulo.cantidad > 0 &&
+    Number.isSafeInteger(articulo.subtotal) &&
+    articulo.subtotal >= 0 &&
+    articulo.subtotal ===
+      articulo.precio * articulo.cantidad
   )
 }
 
 function validarPedido(pedido) {
-  const valido =
+  const estructuraValida =
     pedido !== null &&
     typeof pedido === 'object' &&
     Number.isSafeInteger(pedido.id) &&
@@ -72,22 +95,44 @@ function validarPedido(pedido) {
     typeof pedido.correoCliente === 'string' &&
     pedido.correoCliente.trim() !== '' &&
     ESTADOS_PEDIDO.includes(pedido.estado) &&
-    typeof pedido.fechaCreacion === 'string' &&
-    pedido.fechaCreacion !== '' &&
-    typeof pedido.fechaActualizacion === 'string' &&
-    pedido.fechaActualizacion !== '' &&
+    fechaValida(pedido.fechaCreacion) &&
+    fechaValida(pedido.fechaActualizacion) &&
+    Date.parse(pedido.fechaActualizacion) >=
+      Date.parse(pedido.fechaCreacion) &&
     Number.isSafeInteger(pedido.total) &&
     pedido.total >= 0 &&
     Array.isArray(pedido.articulos) &&
     pedido.articulos.length > 0 &&
-    pedido.articulos.every(esArticuloValido)
+    pedido.articulos.every(esArticuloValido) &&
+    (
+      pedido.motivoCancelacion == null ||
+      (
+        typeof pedido.motivoCancelacion === 'string' &&
+        pedido.motivoCancelacion.length <= 200
+      )
+    )
 
-  if (!valido) {
-    throw new Error('Hay un pedido guardado con datos inválidos.')
+  if (!estructuraValida) {
+    throw new Error('Hay un pedido con datos inválidos.')
+  }
+
+  const ids = pedido.articulos.map((articulo) => articulo.id)
+
+  const totalCalculado = pedido.articulos.reduce(
+    (total, articulo) => total + articulo.subtotal,
+    0,
+  )
+
+  if (
+    new Set(ids).size !== ids.length ||
+    !Number.isSafeInteger(totalCalculado) ||
+    totalCalculado !== pedido.total
+  ) {
+    throw new Error('El contenido del pedido no es válido.')
   }
 }
 
-function validarLista(pedidos) {
+function validarPedidos(pedidos) {
   if (!Array.isArray(pedidos)) {
     throw new Error('La lista de pedidos no es válida.')
   }
@@ -101,54 +146,64 @@ function validarLista(pedidos) {
   }
 }
 
-function guardarPedidos(pedidos) {
-  validarLista(pedidos)
+function leerEstadoValidado() {
+  const estado = leerComercio()
 
-  localStorage.setItem(
-    CLAVE_PEDIDOS,
-    JSON.stringify(pedidos),
-  )
+  validarCatalogo(estado.productos)
+  validarPedidos(estado.pedidos)
+
+  return estado
 }
 
-function reservarId(pedidos) {
-  const guardado = localStorage.getItem(CLAVE_SECUENCIA)
-  const ultimo = guardado === null ? 0 : Number(guardado)
+function guardarEstado(estado) {
+  validarCatalogo(estado.productos)
+  validarPedidos(estado.pedidos)
 
-  if (!Number.isSafeInteger(ultimo) || ultimo < 0) {
-    throw new Error('No se pudo generar el identificador.')
-  }
-
-  const mayorActual = pedidos.reduce(
-    (mayor, pedido) => Math.max(mayor, pedido.id),
-    0,
-  )
-
-  const nuevoId = Math.max(ultimo, mayorActual) + 1
-
-  if (!Number.isSafeInteger(nuevoId)) {
-    throw new Error('No se pudo generar el identificador.')
-  }
-
-  localStorage.setItem(CLAVE_SECUENCIA, String(nuevoId))
-
-  return nuevoId
+  guardarComercio(estado)
 }
 
-function exigirSesion() {
-  const sesion = leerSesion()
+function obtenerObjetivo(estado, id, sesion) {
+  const pedido = estado.pedidos.find(
+    (item) => item.id === id,
+  )
 
-  if (!sesion) {
-    const error = new Error('Debes iniciar sesión.')
-    error.codigo = 'SESION_REQUERIDA'
-    throw error
+  if (!pedido) {
+    rechazar(
+      'PEDIDO_NO_DISPONIBLE',
+      'El pedido no está disponible.',
+    )
   }
 
-  return sesion
+  const esAdministrador = sesion.rol === 'Administrador'
+  const esPropio = pedido.correoCliente === sesion.correo
+
+  if (!esAdministrador && !esPropio) {
+    rechazar(
+      'OPERACION_NO_PERMITIDA',
+      'Operación no permitida.',
+    )
+  }
+
+  return pedido
+}
+
+function actualizarFecha(pedido) {
+  return new Date(
+    Math.max(
+      Date.now(),
+      Date.parse(pedido.fechaActualizacion),
+    ),
+  ).toISOString()
+}
+
+export function obtenerSiguienteEstado(estado) {
+  return SIGUIENTE_ESTADO[estado] || null
 }
 
 export function obtenerPedidos() {
-  const pedidos = leerPedidosGuardados()
-  validarLista(pedidos)
+  const { pedidos } = leerComercio()
+
+  validarPedidos(pedidos)
 
   return pedidos
 }
@@ -157,85 +212,100 @@ export function obtenerPedidosPropios() {
   const sesion = exigirSesion()
 
   return obtenerPedidos().filter(
-    (pedido) =>
-      pedido.correoCliente === sesion.correo,
+    (pedido) => pedido.correoCliente === sesion.correo,
   )
 }
 
 export function obtenerPedidosAdministrables() {
   const sesion = exigirSesion()
 
-  if (sesion.rol !== 'Administrador') {
-    const error = new Error('Operación no permitida.')
-    error.codigo = 'OPERACION_NO_PERMITIDA'
-    throw error
-  }
+  exigirAdministrador(sesion)
 
   return obtenerPedidos()
 }
 
 export function confirmarPedido() {
   const sesion = exigirSesion()
+  const estado = leerEstadoValidado()
   const carrito = obtenerCarrito()
-  const productos = obtenerProductos()
 
   if (carrito.length === 0) {
-    const error = new Error(
-      'El carrito está vacío.',
-    )
-    error.codigo = 'CARRITO_VACIO'
-    throw error
+    rechazar('CARRITO_VACIO', 'El carrito está vacío.')
   }
 
-  const productosPorId = new Map(
-    productos.map((producto) => [producto.id, producto]),
+  const porId = new Map(
+    estado.productos.map((producto) => [
+      producto.id,
+      producto,
+    ]),
   )
 
-  const conflictos = carrito.map((item) => {
-    const producto = productosPorId.get(item.id)
+  const articulos = carrito.map((item) => {
+    const producto = porId.get(item.id)
 
     if (!producto) {
-      return `El producto "${item.nombre}" ya no está disponible.`
+      rechazar(
+        'PRODUCTO_NO_DISPONIBLE',
+        `El producto "${item.nombre}" ya no está disponible.`,
+      )
     }
 
-    if (producto.stock < item.cantidad) {
-      return `Solo hay ${producto.stock} unidades disponibles de "${producto.nombre}".`
+    if (
+      !Number.isSafeInteger(item.cantidad) ||
+      item.cantidad < 1 ||
+      item.cantidad > producto.stock
+    ) {
+      rechazar(
+        'STOCK_INSUFICIENTE',
+        `Revisa la cantidad de "${producto.nombre}". ` +
+          `Hay ${producto.stock} unidades disponibles.`,
+      )
     }
 
-    return null
-  }).filter(Boolean)
+    const subtotal = producto.precio * item.cantidad
 
-  if (conflictos.length > 0) {
-    const error = new Error(conflictos.join(' '))
-    error.codigo = 'STOCK_INSUFICIENTE'
-    error.detalles = conflictos
-    throw error
-  }
-
-  const articulos = carrito.map((item) => {
-    const producto = productosPorId.get(item.id)
+    if (!Number.isSafeInteger(subtotal)) {
+      rechazar(
+        'DATOS_INVALIDOS',
+        'El importe del pedido no es válido.',
+      )
+    }
 
     return {
       id: producto.id,
       nombre: producto.nombre,
       precio: producto.precio,
       cantidad: item.cantidad,
-      subtotal: producto.precio * item.cantidad,
+      subtotal,
     }
   })
 
   const total = articulos.reduce(
-    (acumulado, articulo) =>
-      acumulado + articulo.subtotal,
+    (acumulado, articulo) => acumulado + articulo.subtotal,
     0,
   )
 
+  const mayorId = estado.pedidos.reduce(
+    (mayor, pedido) => Math.max(mayor, pedido.id),
+    estado.ultimoIdPedido,
+  )
+
+  const id = mayorId + 1
+
+  if (
+    !Number.isSafeInteger(total) ||
+    !Number.isSafeInteger(id)
+  ) {
+    rechazar(
+      'DATOS_INVALIDOS',
+      'No se pudo preparar el pedido.',
+    )
+  }
+
   const fecha = new Date().toISOString()
 
-  const pedidos = obtenerPedidos()
-
   const nuevoPedido = {
-    id: reservarId(pedidos),
+    id,
     correoCliente: sesion.correo,
     estado: 'Pendiente',
     fechaCreacion: fecha,
@@ -245,163 +315,123 @@ export function confirmarPedido() {
     motivoCancelacion: null,
   }
 
-  const productosActualizados = productos.map((producto) => {
-    const articulo = articulos.find(
-      (item) => item.id === producto.id,
-    )
+  const cantidades = new Map(
+    articulos.map((articulo) => [
+      articulo.id,
+      articulo.cantidad,
+    ]),
+  )
 
-    if (!articulo) {
-      return producto
-    }
+  const productos = estado.productos.map((producto) => ({
+    ...producto,
+    stock:
+      producto.stock -
+      (cantidades.get(producto.id) || 0),
+  }))
 
-    return {
-      ...producto,
-      stock: producto.stock - articulo.cantidad,
-    }
+  guardarEstado({
+    ...estado,
+    productos,
+    carrito: [],
+    pedidos: [...estado.pedidos, nuevoPedido],
+    ultimoIdPedido: id,
   })
-
-  localStorage.setItem(
-    'jugoseoProductos',
-    JSON.stringify(productosActualizados),
-  )
-
-  localStorage.setItem(
-    'jugoseoCarrito',
-    JSON.stringify([]),
-  )
-
-  guardarPedidos([...pedidos, nuevoPedido])
 
   return nuevoPedido
 }
 
-function obtenerPedidoEditable(id, sesion) {
-  const pedidos = obtenerPedidos()
-  const pedido = pedidos.find(
-    (item) => item.id === id,
-  )
-
-  if (!pedido) {
-    const error = new Error('El pedido no está disponible.')
-    error.codigo = 'PEDIDO_NO_DISPONIBLE'
-    throw error
-  }
-
-  const esAdministrador = sesion.rol === 'Administrador'
-  const esPropio =
-    pedido.correoCliente === sesion.correo
-
-  if (!esAdministrador && !esPropio) {
-    const error = new Error('Operación no permitida.')
-    error.codigo = 'OPERACION_NO_PERMITIDA'
-    throw error
-  }
-
-  return {
-    pedidos,
-    pedido,
-    esAdministrador,
-  }
-}
-
-export function cambiarEstadoPedido(id, estado) {
+export function cambiarEstadoPedido(id, nuevoEstado) {
   const sesion = exigirSesion()
 
-  if (sesion.rol !== 'Administrador') {
-    const error = new Error('Operación no permitida.')
-    error.codigo = 'OPERACION_NO_PERMITIDA'
-    throw error
+  exigirAdministrador(sesion)
+
+  if (nuevoEstado === 'Cancelado') {
+    return cancelarPedido(id, '').pedidos
   }
 
-  const {
-    pedidos,
-    pedido,
-  } = obtenerPedidoEditable(id, sesion)
+  const estado = leerEstadoValidado()
+  const pedido = obtenerObjetivo(estado, id, sesion)
 
   if (
-    pedido.estado === 'Cancelado' ||
-    pedido.estado === 'Entregado'
+    pedido.estado === 'Entregado' ||
+    pedido.estado === 'Cancelado'
   ) {
-    const error = new Error('Este pedido ya está cerrado.')
-    error.codigo = 'PEDIDO_CERRADO'
-    throw error
+    rechazar(
+      'PEDIDO_CERRADO',
+      'Este pedido ya está cerrado.',
+    )
   }
 
-  if (estado === 'Cancelado') {
-    const resultado = cancelarPedido(id, '')
-    return resultado.pedidos
-  }
-
-  const siguiente = obtenerSiguienteEstado(pedido.estado)
-
-  if (!siguiente || estado !== siguiente) {
-    const error = new Error(
+  if (
+    nuevoEstado !== obtenerSiguienteEstado(pedido.estado)
+  ) {
+    rechazar(
+      'TRANSICION_INVALIDA',
       'El pedido solo puede avanzar al siguiente estado.',
     )
-    error.codigo = 'TRANSICION_INVALIDA'
-    throw error
   }
 
-  const actualizados = pedidos.map((item) =>
+  const pedidos = estado.pedidos.map((item) =>
     item.id === id
       ? {
           ...item,
-          estado,
-          fechaActualizacion: new Date().toISOString(),
+          estado: nuevoEstado,
+          fechaActualizacion: actualizarFecha(item),
         }
       : item,
   )
 
-  guardarPedidos(actualizados)
+  guardarEstado({
+    ...estado,
+    pedidos,
+  })
 
-  return actualizados
+  return pedidos
 }
 
 export function cancelarPedido(id, motivo = '') {
   const sesion = exigirSesion()
-
-  const {
-    pedidos,
-    pedido,
-    esAdministrador,
-  } = obtenerPedidoEditable(id, sesion)
+  const estado = leerEstadoValidado()
+  const pedido = obtenerObjetivo(estado, id, sesion)
 
   if (!ESTADOS_CANCELABLES.includes(pedido.estado)) {
-    const error = new Error(
+    rechazar(
+      'PEDIDO_NO_CANCELABLE',
       'Este pedido no puede cancelarse.',
     )
-    error.codigo = 'PEDIDO_NO_CANCELABLE'
-    throw error
   }
 
-  const productos = obtenerProductos()
+  const cantidades = new Map(
+    pedido.articulos.map((articulo) => [
+      articulo.id,
+      articulo.cantidad,
+    ]),
+  )
 
-  const productosActualizados = productos.map((producto) => {
-    const articulo = pedido.articulos.find(
-      (item) => item.id === producto.id,
-    )
+  const productos = estado.productos.map((producto) => {
+    const stock =
+      producto.stock +
+      (cantidades.get(producto.id) || 0)
 
-    if (!articulo) {
-      return producto
+    if (!Number.isSafeInteger(stock)) {
+      rechazar(
+        'DATOS_INVALIDOS',
+        'No se pudo calcular la devolución de stock.',
+      )
     }
 
     return {
       ...producto,
-      stock: producto.stock + articulo.cantidad,
+      stock,
     }
   })
 
-  localStorage.setItem(
-    'jugoseoProductos',
-    JSON.stringify(productosActualizados),
-  )
-
-  const actualizados = pedidos.map((item) =>
+  const pedidos = estado.pedidos.map((item) =>
     item.id === id
       ? {
           ...item,
           estado: 'Cancelado',
-          fechaActualizacion: new Date().toISOString(),
+          fechaActualizacion: actualizarFecha(item),
           motivoCancelacion:
             typeof motivo === 'string'
               ? motivo.trim().slice(0, 200)
@@ -410,10 +440,14 @@ export function cancelarPedido(id, motivo = '') {
       : item,
   )
 
-  guardarPedidos(actualizados)
+  guardarEstado({
+    ...estado,
+    productos,
+    pedidos,
+  })
 
   return {
-    pedidos: actualizados,
-    esAdministrador,
+    pedidos,
+    esAdministrador: sesion.rol === 'Administrador',
   }
 }

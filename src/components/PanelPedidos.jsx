@@ -82,6 +82,7 @@ export default function PanelPedidos() {
   useEffect(() => {
     function actualizarDesdeOtraPestana(evento) {
       if (
+        evento.key === 'jugoseoComercio' ||
         evento.key === 'jugoseoPedidos' ||
         evento.key === 'jugoseoProductos' ||
         evento.key === null
