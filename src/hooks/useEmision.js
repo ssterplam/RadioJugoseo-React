@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react'
-
 import {
   CLAVE_EMISION,
   EVENTO_EMISION,
   obtenerEmision,
 } from '../utils/emisionStorage.js'
-
 import {
   obtenerProgramas,
 } from '../utils/programasStorage.js'

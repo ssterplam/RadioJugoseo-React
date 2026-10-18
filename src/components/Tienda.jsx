@@ -13,6 +13,7 @@ import {
 import ConfirmarPedidoModal from './ConfirmarPedidoModal.jsx'
 import {
   confirmarPedido,
+  obtenerResumenPedido,
 } from '../utils/pedidosStorage.js'
 
 function rechazarOperacion(mensaje) {
@@ -25,7 +26,7 @@ export default function Tienda() {
   const [estado, setEstado] = useState(leerEstadoTienda)
   const [mostrarCarrito, setMostrarCarrito] = useState(false)
   const [aviso, setAviso] = useState(null)
-  const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false)
+  const [resumenPedido, setResumenPedido] = useState(null)
 
   const aplicarEstado = useCallback((nuevoEstado) => {
     setEstado((anterior) => ({
@@ -285,67 +286,91 @@ export default function Tienda() {
     setMostrarCarrito(true)
   }
 
+  function mensajeErrorPedido(error) {
+    const mensajes = {
+      SESION_REQUERIDA:
+        'Debes volver a iniciar sesión.',
+      CARRITO_VACIO:
+        'Agrega productos al carrito antes de continuar.',
+      PRODUCTO_NO_DISPONIBLE:
+        'Un producto ya no está disponible. Revisa el carrito.',
+      STOCK_INSUFICIENTE:
+        'Cambió la disponibilidad. Revisa las cantidades del carrito.',
+      RESUMEN_CAMBIADO:
+        'El carrito, sus precios o la cuenta cambiaron. ' +
+        'Revisa los artículos y vuelve a abrir la confirmación.',
+      DATOS_INVALIDOS:
+        'No se pudo preparar el pedido. Revisa el carrito.',
+    }
+
+    return mensajes[error.codigo] ||
+      'No se pudo completar el pedido. Inténtalo nuevamente.'
+  }
+
   function irAPagar() {
     const actual = sincronizar()
 
     if (actual.errorCatalogo || actual.errorCarrito) {
-    notificar(
-      'No se pudo comprobar el carrito. Inténtalo nuevamente.',
-      'danger',
-    )
-    return
-    }
-
-    if (actual.items.length === 0) {
-    notificar(
-      'Debes agregar productos al carrito antes de continuar.',
-      'danger',
-    )
-    return
+      notificar(
+        'No se pudo comprobar el carrito. Inténtalo nuevamente.',
+        'danger',
+      )
+      return
     }
 
     if (Object.keys(actual.conflictos).length > 0) {
-    notificar(
-      'Revisa los artículos no disponibles o sus cantidades.',
-      'danger',
-    )
-    return
+      notificar(
+        'Revisa los artículos no disponibles o sus cantidades.',
+        'danger',
+      )
+      return
     }
 
-    if (actual.cambios.length > 0) {
-    notificar(
-      'El carrito fue actualizado. Revisa los cambios antes de continuar.',
-      'warning',
-    )
-    return
-    }
+    try {
+      const resumen = obtenerResumenPedido()
 
-    setAviso(null)
-    setMostrarConfirmacion(true)
-  }
-
-function confirmarCompra() {
-  try {
-    const pedido = confirmarPedido()
-
-    sincronizar()
-    setMostrarConfirmacion(false)
-    setMostrarCarrito(false)
-
-    notificar(
-      `Pedido #${pedido.id} creado. Quedó en estado Pendiente.`,
-      'success',
-    )
-
-    return { ok: true }
-  } catch (error) {
-    return {
-      ok: false,
-      mensaje: error.message ||
-        'No se pudo crear el pedido. Inténtalo nuevamente.',
+      setAviso(null)
+      setMostrarCarrito(false)
+      setResumenPedido(resumen)
+    } catch (error) {
+      notificar(mensajeErrorPedido(error), 'danger')
     }
   }
-}
+
+  function confirmarCompra() {
+    try {
+      const pedido = confirmarPedido(resumenPedido)
+
+      setResumenPedido(null)
+      setMostrarCarrito(false)
+      sincronizar()
+
+      notificar(
+        `Pedido #${pedido.id} creado. Quedó en estado Pendiente.`,
+        'success',
+      )
+
+      return { ok: true }
+    } catch (error) {
+      const mensaje = mensajeErrorPedido(error)
+
+      setResumenPedido(null)
+      setMostrarCarrito(true)
+      sincronizar()
+
+      notificar(
+        mensaje,
+        error.codigo === 'RESUMEN_CAMBIADO'
+          ? 'warning'
+          : 'danger',
+      )
+
+      return {
+        ok: false,
+        mensaje,
+      }
+    }
+  }
 
   return (
     <section className="pagina-interna">
@@ -454,10 +479,10 @@ function confirmarCompra() {
           irAPagar={irAPagar}
         />
 
-        {mostrarConfirmacion && (
+        {resumenPedido && (
           <ConfirmarPedidoModal
-            items={carrito}
-            cerrar={() => setMostrarConfirmacion(false)}
+            items={resumenPedido.articulos}
+            cerrar={() => setResumenPedido(null)}
             confirmar={confirmarCompra}
           />
         )}

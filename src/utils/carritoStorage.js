@@ -48,3 +48,5 @@ export function guardarCarrito(items) {
     carrito: items,
   })
 }
+
+export { validarLista as validarCarrito }

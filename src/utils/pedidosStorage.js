@@ -1,11 +1,8 @@
 import { leerSesion } from '../data/sesion.js'
-
-import { obtenerCarrito } from './carritoStorage.js'
-
+import { validarCarrito } from './carritoStorage.js'
 import {
   validarLista as validarCatalogo,
 } from './productosStorage.js'
-
 import {
   guardarComercio,
   leerComercio,
@@ -224,10 +221,10 @@ export function obtenerPedidosAdministrables() {
   return obtenerPedidos()
 }
 
-export function confirmarPedido() {
-  const sesion = exigirSesion()
-  const estado = leerEstadoValidado()
-  const carrito = obtenerCarrito()
+function prepararResumen(estado, sesion) {
+  const carrito = estado.carrito
+
+  validarCarrito(carrito)
 
   if (carrito.length === 0) {
     rechazar('CARRITO_VACIO', 'El carrito está vacío.')
@@ -280,10 +277,58 @@ export function confirmarPedido() {
     }
   })
 
+  articulos.sort((a, b) => a.id - b.id)
+
   const total = articulos.reduce(
     (acumulado, articulo) => acumulado + articulo.subtotal,
     0,
   )
+
+  if (!Number.isSafeInteger(total)) {
+    rechazar(
+      'DATOS_INVALIDOS',
+      'El total del pedido no es válido.',
+    )
+  }
+
+  return {
+    correoCliente: sesion.correo,
+    cuentaId: sesion.cuentaId ?? null,
+    versionCuenta: sesion.versionCuenta ?? 0,
+    articulos,
+    total,
+  }
+}
+
+export function obtenerResumenPedido() {
+  const sesion = exigirSesion()
+  const estado = leerEstadoValidado()
+
+  return prepararResumen(estado, sesion)
+}
+
+export function confirmarPedido(resumenEsperado) {
+  const sesion = exigirSesion()
+  const estado = leerEstadoValidado()
+
+  const resumenActual = prepararResumen(
+    estado,
+    sesion,
+  )
+
+  if (
+    !resumenEsperado ||
+    JSON.stringify(resumenEsperado) !==
+      JSON.stringify(resumenActual)
+  ) {
+    rechazar(
+      'RESUMEN_CAMBIADO',
+      'El carrito, sus precios o la cuenta cambiaron. ' +
+        'Revisa el resumen y vuelve a confirmar.',
+    )
+  }
+
+  const { articulos, total } = resumenActual
 
   const mayorId = estado.pedidos.reduce(
     (mayor, pedido) => Math.max(mayor, pedido.id),
@@ -292,13 +337,10 @@ export function confirmarPedido() {
 
   const id = mayorId + 1
 
-  if (
-    !Number.isSafeInteger(total) ||
-    !Number.isSafeInteger(id)
-  ) {
+  if (!Number.isSafeInteger(id)) {
     rechazar(
       'DATOS_INVALIDOS',
-      'No se pudo preparar el pedido.',
+      'No se pudo generar el identificador del pedido.',
     )
   }
 
