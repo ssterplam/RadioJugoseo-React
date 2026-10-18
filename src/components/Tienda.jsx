@@ -3,16 +3,17 @@ import {
   useEffect,
   useState,
 } from 'react'
-
 import ProductoCard from './ProductoCard.jsx'
 import CarritoPanel from './CarritoPanel.jsx'
-
 import { guardarCarrito } from '../utils/carritoStorage.js'
-
 import {
   leerEstadoTienda,
   reconciliarCarrito,
 } from '../utils/sincronizarCarrito.js'
+import ConfirmarPedidoModal from './ConfirmarPedidoModal.jsx'
+import {
+  confirmarPedido,
+} from '../utils/pedidosStorage.js'
 
 function rechazarOperacion(mensaje) {
   const error = new Error(mensaje)
@@ -24,6 +25,7 @@ export default function Tienda() {
   const [estado, setEstado] = useState(leerEstadoTienda)
   const [mostrarCarrito, setMostrarCarrito] = useState(false)
   const [aviso, setAviso] = useState(null)
+  const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false)
 
   const aplicarEstado = useCallback((nuevoEstado) => {
     setEstado((anterior) => ({
@@ -286,41 +288,63 @@ export default function Tienda() {
     const actual = sincronizar()
 
     if (actual.errorCatalogo || actual.errorCarrito) {
-      notificar(
-        'No se pudo comprobar el carrito. Inténtalo nuevamente.',
-        'danger',
-      )
-      return
+    notificar(
+      'No se pudo comprobar el carrito. Inténtalo nuevamente.',
+      'danger',
+    )
+    return
     }
 
     if (actual.items.length === 0) {
-      notificar(
-        'Debes agregar productos al carrito antes de continuar.',
-        'danger',
-      )
-      return
+    notificar(
+      'Debes agregar productos al carrito antes de continuar.',
+      'danger',
+    )
+    return
     }
 
     if (Object.keys(actual.conflictos).length > 0) {
-      notificar(
-        'Revisa los artículos no disponibles o sus cantidades.',
-        'danger',
-      )
-      return
+    notificar(
+      'Revisa los artículos no disponibles o sus cantidades.',
+      'danger',
+    )
+    return
     }
 
     if (actual.cambios.length > 0) {
-      notificar(
-        'El carrito fue actualizado. Revisa los cambios antes de continuar.',
-        'warning',
-      )
-      return
+    notificar(
+      'El carrito fue actualizado. Revisa los cambios antes de continuar.',
+      'warning',
+    )
+    return
     }
 
-    notificar(
-      'El pago se habilitará más adelante. Por ahora, tu carrito queda guardado.',
-    )
+    setAviso(null)
+    setMostrarConfirmacion(true)
   }
+
+function confirmarCompra() {
+  try {
+    const pedido = confirmarPedido()
+
+    sincronizar()
+    setMostrarConfirmacion(false)
+    setMostrarCarrito(false)
+
+    notificar(
+      `Pedido #${pedido.id} creado. Quedó en estado Pendiente.`,
+      'success',
+    )
+
+    return { ok: true }
+  } catch (error) {
+    return {
+      ok: false,
+      mensaje: error.message ||
+        'No se pudo crear el pedido. Inténtalo nuevamente.',
+    }
+  }
+}
 
   return (
     <section className="pagina-interna">
@@ -428,6 +452,14 @@ export default function Tienda() {
           vaciarCarrito={vaciarCarrito}
           irAPagar={irAPagar}
         />
+
+        {mostrarConfirmacion && (
+          <ConfirmarPedidoModal
+            items={carrito}
+            cerrar={() => setMostrarConfirmacion(false)}
+            confirmar={confirmarCompra}
+          />
+        )}
       </div>
     </section>
   )
