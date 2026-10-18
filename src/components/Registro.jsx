@@ -210,6 +210,8 @@ export default function Registro() {
       }
 
       const nuevaCuenta = {
+        id: `usuario-${crypto.randomUUID()}`,
+        versionCuenta: 0,
         nombre: datos.nombre.trim(),
         apellido: datos.apellido.trim(),
         correo,

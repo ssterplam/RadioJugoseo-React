@@ -3,6 +3,10 @@ import {
   validarCorreoParaRol,
 } from '../utils/validacionesCorreo.js'
 
+import {
+  buscarCuentaPorCorreo,
+} from '../utils/cuentasLectura.js'
+
 const CLAVE_SESION = 'jugoseoUsuario'
 
 export function leerSesion() {
@@ -15,33 +19,60 @@ export function leerSesion() {
 
     const sesion = JSON.parse(texto)
 
-    const estructuraValida =
-      sesion &&
-      typeof sesion.usuario === 'string' &&
-      sesion.usuario.trim() !== '' &&
-      typeof sesion.correo === 'string' &&
-      sesion.correo.trim() !== ''
-
-    if (!estructuraValida) {
+    if (
+      !sesion ||
+      typeof sesion.correo !== 'string'
+    ) {
       eliminarSesion()
       return null
     }
 
     const correo = normalizarCorreo(sesion.correo)
+    const cuenta = buscarCuentaPorCorreo(correo)
 
-    const errorCuenta = validarCorreoParaRol(
+    if (!cuenta) {
+      eliminarSesion()
+      return null
+    }
+
+    const rol = cuenta.rol || 'Cliente'
+    const version = cuenta.versionCuenta ?? 0
+
+    const coincide =
+      sesion.rol === rol &&
+      (sesion.cuentaId ?? null) === (cuenta.id || null) &&
+      (sesion.versionCuenta ?? 0) === version
+
+    const correoValido = !validarCorreoParaRol(
       correo,
-      sesion.rol,
+      rol,
     )
 
-    if (errorCuenta) {
+    const nombre = [
+      cuenta.nombre,
+      cuenta.apellido,
+    ]
+      .filter((parte) => typeof parte === 'string')
+      .join(' ')
+      .trim()
+
+    if (
+      !coincide ||
+      !correoValido ||
+      !nombre ||
+      !Number.isSafeInteger(version) ||
+      version < 0
+    ) {
       eliminarSesion()
       return null
     }
 
     return {
       ...sesion,
+      usuario: nombre,
       correo,
+      rol,
+      tipo: cuenta.tipo || null,
     }
   } catch {
     eliminarSesion()

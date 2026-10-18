@@ -1,7 +1,12 @@
 import { useState } from 'react'
-import Modal from 'react-bootstrap/Modal'
-import { usuariosDemo } from '../data/usuariosDemo.js'
 import { Link, useNavigate } from 'react-router-dom'
+
+import Modal from 'react-bootstrap/Modal'
+
+import {
+  buscarCuentaPorCorreo,
+} from '../utils/cuentasLectura.js'
+
 import {
   normalizarCorreo,
   validarCorreoLogin,
@@ -10,17 +15,16 @@ import {
 
 export default function LoginModal({ mostrar, cerrar }) {
   const navigate = useNavigate()
+
   const [correo, setCorreo] = useState('')
   const [password, setPassword] = useState('')
   const [errores, setErrores] = useState({})
   const [mensaje, setMensaje] = useState('')
-  const [exito, setExito] = useState(false)
 
   function iniciarSesion(evento) {
     evento.preventDefault()
 
     setMensaje('')
-    setExito(false)
 
     const correoLimpio = normalizarCorreo(correo)
     const nuevosErrores = {}
@@ -46,32 +50,13 @@ export default function LoginModal({ mostrar, cerrar }) {
     }
 
     try {
-      let cuenta = usuariosDemo.find(
-        (usuario) =>
-          usuario.correo.toLowerCase() === correoLimpio &&
-          usuario.password === password,
-      )
+      const cuenta = buscarCuentaPorCorreo(correoLimpio)
 
-      if (!cuenta) {
-        const registrados = JSON.parse(
-          localStorage.getItem('jugoseoRadioescuchas') || '[]',
-        )
-
-        if (!Array.isArray(registrados)) {
-          throw new Error('Los datos de usuarios no son válidos')
-        }
-
-        cuenta = registrados.find(
-          (usuario) =>
-            String(usuario.correo || '').toLowerCase() === correoLimpio &&
-            usuario.password === password,
-        )
-      }
-
-      if (!cuenta) {
+      if (!cuenta || cuenta.password !== password) {
         setErrores({
           password: 'Correo o contraseña incorrectos',
         })
+
         setMensaje('Correo o contraseña incorrectos')
         return
       }
@@ -88,9 +73,18 @@ export default function LoginModal({ mostrar, cerrar }) {
         return
       }
 
-      const nombre = `${cuenta.nombre || ''} ${
-        cuenta.apellido || ''
-      }`.trim()
+      const nombre = [
+        cuenta.nombre,
+        cuenta.apellido,
+      ]
+        .filter((parte) => typeof parte === 'string')
+        .join(' ')
+        .trim()
+
+      if (!nombre) {
+        setMensaje('No se pudo iniciar sesión.')
+        return
+      }
 
       sessionStorage.setItem(
         'jugoseoUsuario',
@@ -99,16 +93,16 @@ export default function LoginModal({ mostrar, cerrar }) {
           correo: correoLimpio,
           rol,
           tipo: cuenta.tipo || null,
+          cuentaId: cuenta.id || null,
+          versionCuenta: cuenta.versionCuenta ?? 0,
         }),
       )
 
       cerrar()
-      navigate('/app/inicio', { replace: true }
-      )
+      navigate('/app/inicio', { replace: true })
     } catch {
       setMensaje(
-        'No se pudieron leer los usuarios o guardar la sesión. ' +
-          'Revisa que el navegador permita el almacenamiento local.',
+        'No se pudo iniciar sesión. Inténtalo nuevamente.',
       )
     }
   }
@@ -141,7 +135,10 @@ export default function LoginModal({ mostrar, cerrar }) {
       <Modal.Body>
         <form onSubmit={iniciarSesion} noValidate>
           <div className="mb-3">
-            <label htmlFor="loginUsuario" className="form-label">
+            <label
+              htmlFor="loginUsuario"
+              className="form-label"
+            >
               Correo electrónico
             </label>
 
@@ -160,15 +157,23 @@ export default function LoginModal({ mostrar, cerrar }) {
                 setMensaje('')
               }}
               required
+              aria-invalid={Boolean(errores.correo)}
+              aria-describedby="errorLoginCorreo"
             />
 
-            <div className="invalid-feedback">
+            <div
+              id="errorLoginCorreo"
+              className="invalid-feedback"
+            >
               {errores.correo}
             </div>
           </div>
 
           <div className="mb-3">
-            <label htmlFor="loginPassword" className="form-label">
+            <label
+              htmlFor="loginPassword"
+              className="form-label"
+            >
               Contraseña (4 a 10 caracteres)
             </label>
 
@@ -188,9 +193,14 @@ export default function LoginModal({ mostrar, cerrar }) {
                 setMensaje('')
               }}
               required
+              aria-invalid={Boolean(errores.password)}
+              aria-describedby="errorLoginPassword"
             />
 
-            <div className="invalid-feedback">
+            <div
+              id="errorLoginPassword"
+              className="invalid-feedback"
+            >
               {errores.password}
             </div>
           </div>
@@ -205,9 +215,7 @@ export default function LoginModal({ mostrar, cerrar }) {
 
         {mensaje && (
           <div
-            className={`alert ${
-              exito ? 'alert-success' : 'alert-danger'
-            } mt-3 mb-0`}
+            className="alert alert-danger mt-3 mb-0"
             role="status"
           >
             {mensaje}
