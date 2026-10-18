@@ -17,7 +17,7 @@ import DetallePrograma from './components/DetallePrograma.jsx'
 import Noticias from './components/Noticias.jsx'
 import DetalleNoticia from './components/DetalleNoticia.jsx'
 import Tienda from './components/Tienda.jsx'
-import PanelInicial from './components/PanelInicial.jsx'
+import PanelProgramas from './components/PanelProgramas.jsx'
 
 export default function App() {
   return (
@@ -84,12 +84,7 @@ export default function App() {
             >
               <Route
                 path="locutor"
-                element={
-                  <PanelInicial
-                    titulo="Panel Locutor"
-                    descripcion="Aquí incorporaremos los programas asignados, su edición y los controles de emisión simulada."
-                  />
-                }
+                element={<PanelProgramas />}
               />
             </Route>
 
@@ -102,12 +97,7 @@ export default function App() {
             >
               <Route
                 path="admin"
-                element={
-                  <PanelInicial
-                    titulo="Panel Administrador"
-                    descripcion="Aquí incorporaremos la gestión de programas, asignaciones, usuarios, productos y pedidos."
-                  />
-                }
+                element={<PanelProgramas />}
               />
             </Route>
           </Route>

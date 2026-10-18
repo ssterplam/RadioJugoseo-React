@@ -1,12 +1,17 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
-import { programas } from '../data/programas.js'
+import {
+  cargarCatalogoProgramas,
+} from '../utils/programasStorage.js'
 
 const rutaImagenes = `${import.meta.env.BASE_URL}img/`
 
 export default function DetallePrograma() {
   const { programaId } = useParams()
+
+  const [catalogo] = useState(cargarCatalogoProgramas)
+  const { programas, error } = catalogo
 
   const programa = programas.find(
     (item) => item.id === programaId,
@@ -15,6 +20,25 @@ export default function DetallePrograma() {
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [programaId])
+
+  if (error) {
+    return (
+      <section className="pagina-interna">
+        <div className="container">
+          <div className="alert alert-danger" role="alert">
+            {error}
+          </div>
+
+          <Link
+            to="/app/programas"
+            className="jugoseo-link"
+          >
+            ← Volver a Programas
+          </Link>
+        </div>
+      </section>
+    )
+  }
 
   if (!programa) {
     return (

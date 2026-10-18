@@ -1,13 +1,36 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import {
-  programas,
   programacionSemanal,
 } from '../data/programas.js'
+
+import {
+  cargarCatalogoProgramas,
+} from '../utils/programasStorage.js'
 
 const rutaImagenes = `${import.meta.env.BASE_URL}img/`
 
 export default function Programas() {
+  const [catalogo] = useState(cargarCatalogoProgramas)
+  const { programas, error } = catalogo
+
+  if (error) {
+    return (
+      <section className="pagina-interna">
+        <div className="container">
+          <h1 className="pagina-titulo h3">
+            Programas
+          </h1>
+
+          <div className="alert alert-danger" role="alert">
+            {error}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
   return (
     <section className="pagina-interna">
       <div className="container">
