@@ -112,7 +112,7 @@ export default function App() {
 
                 <Route
                   path="programas"
-                  element={<PanelProgramas />}
+                  element={<PanelProgramas permitirAltasBajas/>}
                 />
 
                 <Route

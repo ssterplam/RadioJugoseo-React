@@ -323,3 +323,96 @@ export function finalizarEmision(programaId) {
 
   guardarEmision(null)
 }
+
+function exigirAdministrador() {
+  const sesion = leerSesion()
+
+  if (!sesion || sesion.rol !== 'Administrador') {
+    throw new Error('Operación no permitida.')
+  }
+
+  return sesion
+}
+
+export function crearPrograma(datos) {
+  exigirAdministrador()
+
+  const errores = validarEdicionPrograma(datos, true)
+
+  if (Object.keys(errores).length > 0) {
+    throw new Error('Los datos ingresados no son válidos.')
+  }
+
+  const programas = obtenerProgramas()
+
+  let id
+
+  do {
+    id = `programa-${crypto.randomUUID()}`
+  } while (
+    programas.some((programa) => programa.id === id)
+  )
+
+  const nuevoPrograma = {
+    id,
+    nombre: datos.nombre.trim(),
+    conductor: datos.conductor.trim(),
+    horarioDetalle: datos.horarioDetalle.trim(),
+    imagen: datos.imagen.trim(),
+    descripcion: datos.descripcion.trim(),
+    parrafos: separarLineas(datos.parrafos),
+    caracteristicas: separarLineas(datos.caracteristicas),
+    locutorCorreo: null,
+  }
+
+  const actualizados = [
+    ...programas,
+    nuevoPrograma,
+  ]
+
+  validarLista(actualizados)
+
+  localStorage.setItem(
+    CLAVE_PROGRAMAS,
+    JSON.stringify(actualizados),
+  )
+
+  notificarCambioEmision()
+
+  return actualizados
+}
+
+export function eliminarPrograma(programaId) {
+  exigirAdministrador()
+
+  const emision = obtenerEmision()
+
+  if (emision?.programaId === programaId) {
+    throw new Error('No se puede eliminar un programa activo.')
+  }
+
+  const programas = obtenerProgramas()
+
+  const existe = programas.some(
+    (programa) => programa.id === programaId,
+  )
+
+  if (!existe) {
+    throw new Error('El programa no está disponible.')
+  }
+
+  const actualizados = programas.filter(
+    (programa) => programa.id !== programaId,
+  )
+
+  validarLista(actualizados)
+
+  localStorage.setItem(
+    CLAVE_PROGRAMAS,
+    JSON.stringify(actualizados),
+  )
+
+  notificarCambioEmision()
+
+  return actualizados
+}

@@ -12,6 +12,8 @@ import useEmision from '../hooks/useEmision.js'
 import {
   actualizarContenidoPrograma,
   asignarLocutor,
+  crearPrograma,
+  eliminarPrograma,
   obtenerProgramas,
 } from '../utils/programasStorage.js'
 
@@ -51,7 +53,23 @@ function cargarPanel() {
   }
 }
 
-export default function PanelProgramas() {
+function programaVacio() {
+  return {
+    id: null,
+    nombre: '',
+    conductor: '',
+    horarioDetalle: '',
+    imagen: '',
+    descripcion: '',
+    parrafos: [],
+    caracteristicas: [],
+    locutorCorreo: null,
+  }
+}
+
+export default function PanelProgramas({
+  permitirAltasBajas = false,
+}) {
   const { sesion } = useOutletContext()
 
   const {
@@ -65,7 +83,14 @@ export default function PanelProgramas() {
   const [programaEditando, setProgramaEditando] = useState(null)
 
   const esAdministrador = sesion.rol === 'Administrador'
+
+  const puedeCrearEliminar =
+    esAdministrador && permitirAltasBajas
+
+  const esNuevo = programaEditando?.id === null
   const correoActual = normalizarCorreo(sesion.correo)
+
+  const Titulo = permitirAltasBajas ? 'h2' : 'h1'
 
   const programasVisibles = esAdministrador
     ? estado.programas
@@ -99,16 +124,33 @@ export default function PanelProgramas() {
     }
   }
 
-  function guardarEdicion(datos) {
+  function abrirCreacion() {
+    if (!puedeCrearEliminar || estado.error) {
+      return
+    }
+
+    setAviso(null)
+    setProgramaEditando(programaVacio())
+  }
+
+  function guardarFormulario(datos) {
     if (!programaEditando) {
       return false
     }
 
+    const creando = programaEditando.id === null
+
+    if (creando && !puedeCrearEliminar) {
+      return false
+    }
+
     try {
-      const actualizados = actualizarContenidoPrograma(
-        programaEditando.id,
-        datos,
-      )
+      const actualizados = creando
+        ? crearPrograma(datos)
+        : actualizarContenidoPrograma(
+            programaEditando.id,
+            datos,
+          )
 
       setEstado((actual) => ({
         ...actual,
@@ -119,7 +161,9 @@ export default function PanelProgramas() {
 
       setAviso({
         tipo: 'success',
-        texto: 'Programa actualizado.',
+        texto: creando
+          ? 'Programa creado.'
+          : 'Programa actualizado.',
       })
 
       return true
@@ -128,14 +172,62 @@ export default function PanelProgramas() {
     }
   }
 
+  function solicitarEliminacion(programa) {
+    if (!puedeCrearEliminar) {
+      return
+    }
+
+    const confirmado = window.confirm(
+      `¿Eliminar el programa "${programa.nombre}"? ` +
+        'Esta acción no se puede deshacer desde la aplicación.',
+    )
+
+    if (!confirmado) {
+      return
+    }
+
+    try {
+      const actualizados = eliminarPrograma(programa.id)
+
+      setEstado((actual) => ({
+        ...actual,
+        programas: actualizados,
+      }))
+
+      setAviso({
+        tipo: 'success',
+        texto: 'Programa eliminado.',
+      })
+    } catch {
+      setAviso({
+        tipo: 'danger',
+        texto:
+          'No se pudo eliminar el programa. Comprueba su estado e inténtalo nuevamente.',
+      })
+    }
+  }
+
   return (
     <section className="pagina-interna">
       <div className="container">
-        <h1 className="pagina-titulo h3">
-          {esAdministrador
-            ? 'Gestión de programas'
-            : 'Mis programas'}
-        </h1>
+        <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+          <Titulo className="pagina-titulo h3 mb-0">
+            {esAdministrador
+              ? 'Gestión de programas'
+              : 'Mis programas'}
+          </Titulo>
+
+          {puedeCrearEliminar && (
+            <button
+              type="button"
+              className="btn jugoseo-btn-login"
+              onClick={abrirCreacion}
+              disabled={Boolean(estado.error)}
+            >
+              Crear programa
+            </button>
+          )}
+        </div>
 
         <p className="jugoseo-card-texto">
           {esAdministrador
@@ -178,105 +270,131 @@ export default function PanelProgramas() {
           </p>
         ) : (
           <div className="row g-4">
-            {programasVisibles.map((programa) => (
-              <div
-                className="col-md-6"
-                key={programa.id}
-              >
-                <article className="jugoseo-card">
-                  <h2 className="jugoseo-card-titulo">
-                    {programa.nombre}
-                  </h2>
+            {programasVisibles.map((programa) => {
+              const estaActivo =
+                emision?.programaId === programa.id
 
-                  <p className="jugoseo-card-texto">
-                    {programa.horarioDetalle}
-                  </p>
+              return (
+                <div
+                  className="col-md-6"
+                  key={programa.id}
+                >
+                  <article className="jugoseo-card">
+                    <h3 className="jugoseo-card-titulo">
+                      {programa.nombre}
+                    </h3>
 
-                  {esAdministrador ? (
-                    <div className="mb-3">
-                      <label
-                        htmlFor={`locutor-${programa.id}`}
-                        className="form-label jugoseo-form-label"
-                      >
-                        Locutor asignado
-                      </label>
-
-                      <select
-                        id={`locutor-${programa.id}`}
-                        className="form-select jugoseo-input"
-                        value={programa.locutorCorreo || ''}
-                        disabled={
-                          Boolean(errorEmision) ||
-                          emision?.programaId === programa.id
-                        }
-                        onChange={(evento) =>
-                          cambiarAsignacion(
-                            programa.id,
-                            evento.target.value,
-                          )
-                        }
-                      >
-                        <option value="">
-                          Sin asignar
-                        </option>
-
-                        {programa.locutorCorreo &&
-                          !estado.locutores.some(
-                            (locutor) =>
-                              locutor.correo === programa.locutorCorreo,
-                          ) && (
-                            <option
-                              value={programa.locutorCorreo}
-                              disabled
-                            >
-                              Cuenta no disponible
-                            </option>
-                          )}
-
-                        {estado.locutores.map((locutor) => (
-                          <option
-                            value={locutor.correo}
-                            key={locutor.correo}
-                          >
-                            {locutor.nombre} — {locutor.correo}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : (
                     <p className="jugoseo-card-texto">
-                      Asignado a tu cuenta.
+                      {programa.horarioDetalle}
                     </p>
-                  )}
 
-                  <div className="d-flex align-items-center flex-wrap gap-3">
-                    <button
-                      type="button"
-                      className="btn jugoseo-btn-login"
-                      onClick={() => {
-                        setAviso(null)
-                        setProgramaEditando(programa)
-                      }}
-                    >
-                      Editar programa
-                    </button>
+                    {esAdministrador ? (
+                      <div className="mb-3">
+                        <label
+                          htmlFor={`locutor-${programa.id}`}
+                          className="form-label jugoseo-form-label"
+                        >
+                          Locutor asignado
+                        </label>
 
-                    <Link
-                      to={`/app/programas/${programa.id}`}
-                      className="jugoseo-link"
-                    >
-                      Ver ficha
-                    </Link>
-                  </div>
+                        <select
+                          id={`locutor-${programa.id}`}
+                          className="form-select jugoseo-input"
+                          value={programa.locutorCorreo || ''}
+                          disabled={
+                            Boolean(errorEmision) || estaActivo
+                          }
+                          onChange={(evento) =>
+                            cambiarAsignacion(
+                              programa.id,
+                              evento.target.value,
+                            )
+                          }
+                        >
+                          <option value="">
+                            Sin asignar
+                          </option>
 
-                  <ControlesEmision
-                    programa={programa}
-                    emision={emision}
-                    errorEmision={errorEmision}
-                  />
-                </article>
-              </div>
-            ))}
+                          {programa.locutorCorreo &&
+                            !estado.locutores.some(
+                              (locutor) =>
+                                locutor.correo === programa.locutorCorreo,
+                            ) && (
+                              <option
+                                value={programa.locutorCorreo}
+                                disabled
+                              >
+                                Cuenta no disponible
+                              </option>
+                            )}
+
+                          {estado.locutores.map((locutor) => (
+                            <option
+                              value={locutor.correo}
+                              key={locutor.correo}
+                            >
+                              {locutor.nombre} — {locutor.correo}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : (
+                      <p className="jugoseo-card-texto">
+                        Asignado a tu cuenta.
+                      </p>
+                    )}
+
+                    <div className="d-flex align-items-center flex-wrap gap-3">
+                      <button
+                        type="button"
+                        className="btn jugoseo-btn-login"
+                        onClick={() => {
+                          setAviso(null)
+                          setProgramaEditando(programa)
+                        }}
+                      >
+                        Editar programa
+                      </button>
+
+                      <Link
+                        to={`/app/programas/${programa.id}`}
+                        className="jugoseo-link"
+                      >
+                        Ver ficha
+                      </Link>
+
+                      {puedeCrearEliminar && (
+                        <button
+                          type="button"
+                          className="btn btn-outline-danger"
+                          onClick={() =>
+                            solicitarEliminacion(programa)
+                          }
+                          disabled={
+                            Boolean(errorEmision) || estaActivo
+                          }
+                        >
+                          Eliminar
+                        </button>
+                      )}
+                    </div>
+
+                    {puedeCrearEliminar && estaActivo && (
+                      <p className="jugoseo-card-texto mt-2 mb-0">
+                        Finaliza la emisión antes de eliminar
+                        el programa.
+                      </p>
+                    )}
+
+                    <ControlesEmision
+                      programa={programa}
+                      emision={emision}
+                      errorEmision={errorEmision}
+                    />
+                  </article>
+                </div>
+              )
+            })}
           </div>
         )}
 
@@ -287,11 +405,12 @@ export default function PanelProgramas() {
 
         {programaEditando && (
           <EditarProgramaModal
-            key={programaEditando.id}
+            key={programaEditando.id || 'nuevo-programa'}
             programa={programaEditando}
             esAdministrador={esAdministrador}
+            esNuevo={esNuevo}
             cerrar={() => setProgramaEditando(null)}
-            guardar={guardarEdicion}
+            guardar={guardarFormulario}
           />
         )}
       </div>

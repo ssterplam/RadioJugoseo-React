@@ -55,6 +55,7 @@ const campos = [
 export default function EditarProgramaModal({
   programa,
   esAdministrador,
+  esNuevo = false,
   cerrar,
   guardar,
 }) {
@@ -125,7 +126,7 @@ export default function EditarProgramaModal({
           id="tituloEditarPrograma"
           className="jugoseo-modal-title"
         >
-          Editar programa
+          {esNuevo ? 'Crear programa' : 'Editar programa'}
         </Modal.Title>
 
         <button
@@ -217,7 +218,7 @@ export default function EditarProgramaModal({
               type="submit"
               className="btn jugoseo-btn-login"
             >
-              Guardar cambios
+              {esNuevo ? 'Crear programa' : 'Guardar cambios'}
             </button>
           </div>
         </form>
