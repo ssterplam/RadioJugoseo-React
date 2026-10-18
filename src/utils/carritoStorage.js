@@ -1,4 +1,5 @@
 import {
+  conBloqueoComercio,
   guardarComercio,
   leerComercio,
 } from './comercioStorage.js'
@@ -46,6 +47,36 @@ export function guardarCarrito(items) {
   guardarComercio({
     ...estado,
     carrito: items,
+  })
+}
+
+export function reiniciarCarritoDanado() {
+  return conBloqueoComercio(() => {
+    const estado = leerComercio({
+      permitirCarritoInvalido: true,
+    })
+
+    let carritoValido = true
+
+    try {
+      validarLista(estado.carrito)
+    } catch {
+      carritoValido = false
+    }
+
+    if (carritoValido) {
+      const error = new Error(
+        'El carrito ya es válido. Revisa su contenido antes de vaciarlo.',
+      )
+
+      error.codigo = 'CARRITO_YA_VALIDO'
+      throw error
+    }
+
+    guardarComercio({
+      ...estado,
+      carrito: [],
+    })
   })
 }
 

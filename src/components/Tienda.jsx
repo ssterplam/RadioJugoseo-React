@@ -10,6 +10,7 @@ import ConfirmarPedidoModal from './ConfirmarPedidoModal.jsx'
 
 import {
   guardarCarrito,
+  reiniciarCarritoDanado,
 } from '../utils/carritoStorage.js'
 
 import {
@@ -254,30 +255,70 @@ export default function Tienda() {
   }
 
   async function vaciarCarrito() {
+    const actual = sincronizar()
+
+    if (actual.errorCatalogo) {
+      notificar(
+        'No se puede reiniciar únicamente el carrito porque ' +
+          'no se pudo comprobar la estructura de comercio ' +
+          'o el catálogo. No se modificaron los datos.',
+        'danger',
+      )
+      return
+    }
+
+    const reiniciando = Boolean(actual.errorCarrito)
+
     if (
-      estado.errorCarrito &&
+      reiniciando &&
       !window.confirm(
-        '¿Reiniciar únicamente el carrito guardado? ' +
-          'No se eliminarán usuarios ni productos.',
+        'El carrito contiene datos inválidos. ' +
+          '¿Reiniciar únicamente su contenido? ' +
+          'Se conservarán productos, stock, pedidos y usuarios.',
       )
     ) {
       return
     }
 
     try {
-      await conBloqueoComercio(() => {
-        guardarCarrito([])
+      if (reiniciando) {
+        await reiniciarCarritoDanado()
+      } else {
+        await conBloqueoComercio(() => {
+          guardarCarrito([])
+        })
+      }
+
+      setResumenPedido(null)
+
+      setEstado({
+        ...leerEstadoTienda(),
+        cambios: [],
       })
 
-      sincronizar()
-      notificar('Carrito vaciado.', 'success')
+      notificar(
+        reiniciando
+          ? 'Carrito reiniciado. Se conservaron productos y pedidos.'
+          : 'Carrito vaciado.',
+        'success',
+      )
     } catch (error) {
       sincronizar()
+
+      if (error.codigo === 'CARRITO_YA_VALIDO') {
+        notificar(
+          'El carrito cambió y ya es válido. ' +
+            'Revisa su contenido antes de volver a vaciarlo.',
+          'warning',
+        )
+        return
+      }
 
       notificar(
         error.codigo === 'BLOQUEO_NO_DISPONIBLE'
           ? error.message
-          : 'No se pudo vaciar el carrito. Inténtalo nuevamente.',
+          : 'No se pudo vaciar o reiniciar el carrito. ' +
+            'Inténtalo nuevamente.',
         'danger',
       )
     }
@@ -482,6 +523,7 @@ export default function Tienda() {
           eliminarProducto={eliminarProducto}
           vaciarCarrito={vaciarCarrito}
           irAPagar={irAPagar}
+          errorCarrito={estado.errorCarrito}
         />
 
         {resumenPedido && (

@@ -17,13 +17,38 @@ function leerAnterior(clave, valorInicial) {
     : JSON.parse(texto)
 }
 
-function validarEstructura(estado) {
+function leerCarritoAnterior(permitirCarritoInvalido) {
+  const texto = localStorage.getItem('jugoseoCarrito')
+
+  if (texto === null) {
+    return []
+  }
+
+  try {
+    return JSON.parse(texto)
+  } catch (error) {
+    if (!permitirCarritoInvalido) {
+      throw error
+    }
+
+    return null
+  }
+}
+
+function validarEstructura(
+  estado,
+  permitirCarritoInvalido = false,
+) {
   if (
     !estado ||
     typeof estado !== 'object' ||
+    Array.isArray(estado) ||
     estado.version !== 1 ||
     !Array.isArray(estado.productos) ||
-    !Array.isArray(estado.carrito) ||
+    (
+      !permitirCarritoInvalido &&
+      !Array.isArray(estado.carrito)
+    ) ||
     !Array.isArray(estado.pedidos) ||
     !Number.isSafeInteger(estado.ultimoIdPedido) ||
     estado.ultimoIdPedido < 0
@@ -34,12 +59,19 @@ function validarEstructura(estado) {
   }
 }
 
-export function leerComercio() {
+export function leerComercio({
+  permitirCarritoInvalido = false,
+} = {}) {
   const texto = localStorage.getItem(CLAVE_COMERCIO)
 
   if (texto !== null) {
     const estado = JSON.parse(texto)
-    validarEstructura(estado)
+
+    validarEstructura(
+      estado,
+      permitirCarritoInvalido,
+    )
+
     return estado
   }
 
@@ -55,7 +87,9 @@ export function leerComercio() {
         ...producto,
       })),
     ),
-    carrito: leerAnterior('jugoseoCarrito', []),
+    carrito: leerCarritoAnterior(
+      permitirCarritoInvalido,
+    ),
     pedidos: leerAnterior('jugoseoPedidos', []),
     ultimoIdPedido:
       secuenciaAnterior === null
@@ -63,7 +97,10 @@ export function leerComercio() {
         : Number(secuenciaAnterior),
   }
 
-  validarEstructura(estado)
+  validarEstructura(
+    estado,
+    permitirCarritoInvalido,
+  )
 
   return estado
 }
@@ -71,15 +108,15 @@ export function leerComercio() {
 export function guardarComercio(estado) {
   if (!bloqueoActivo) {
     throw new Error(
-        'La escritura de comercio requiere el bloqueo común.',
-        )
-    }
-    
-    validarEstructura(estado)
+      'La escritura de comercio requiere el bloqueo común.',
+    )
+  }
 
-    const texto = JSON.stringify(estado)
+  validarEstructura(estado)
 
-    localStorage.setItem(CLAVE_COMERCIO, texto)
+  const texto = JSON.stringify(estado)
+
+  localStorage.setItem(CLAVE_COMERCIO, texto)
 }
 
 export async function conBloqueoComercio(tarea) {

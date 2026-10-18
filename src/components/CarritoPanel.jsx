@@ -10,6 +10,7 @@ export default function CarritoPanel({
   cambios = [],
   aviso,
   errorCarga,
+  errorCarrito = '',
   cambiarCantidad,
   eliminarProducto,
   vaciarCarrito,
@@ -188,10 +189,13 @@ export default function CarritoPanel({
             type="button"
             className="btn btn-outline-light w-100"
             onClick={vaciarCarrito}
-            disabled={!errorCarga && items.length === 0}
+            disabled={
+              Boolean(errorCarga) && !errorCarrito ||
+              !errorCarga && items.length === 0
+            }
           >
-            {errorCarga
-              ? 'Vaciar o reiniciar carrito'
+            {errorCarrito
+              ? 'Reiniciar carrito'
               : 'Vaciar carrito'}
           </button>
         </div>

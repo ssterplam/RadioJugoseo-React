@@ -1,9 +1,12 @@
 import {
-  esProductoValido,
-  obtenerProductos,
+  validarLista as validarCatalogo,
 } from './productosStorage.js'
-
-import { obtenerCarrito } from './carritoStorage.js'
+import {
+  validarCarrito,
+} from './carritoStorage.js'
+import {
+  leerComercio,
+} from './comercioStorage.js'
 import { formatearCLP } from './formatoMoneda.js'
 
 export function reconciliarCarrito(items, productos) {
@@ -76,41 +79,41 @@ export function leerEstadoTienda() {
     errorCarrito: '',
   }
 
-  let productos
+  let estado
 
   try {
-    productos = obtenerProductos()
+    estado = leerComercio({
+      permitirCarritoInvalido: true,
+    })
 
-    const ids = productos.map((producto) => producto?.id)
-
-    if (
-      !productos.every(esProductoValido) ||
-      new Set(ids).size !== ids.length
-    ) {
-      throw new Error('Catálogo inválido.')
-    }
+    validarCatalogo(estado.productos)
   } catch {
     return {
       ...inicial,
       errorCatalogo:
-        'No se pudo consultar el catálogo. Inténtalo nuevamente.',
+        'No se pudo consultar el catálogo o la estructura ' +
+        'de comercio. Los datos guardados no se reemplazaron.',
     }
   }
 
   try {
-    const items = obtenerCarrito()
+    validarCarrito(estado.carrito)
 
     return {
       ...inicial,
-      productos,
-      ...reconciliarCarrito(items, productos),
+      productos: estado.productos,
+      ...reconciliarCarrito(
+        estado.carrito,
+        estado.productos,
+      ),
     }
   } catch {
     return {
       ...inicial,
-      productos,
+      productos: estado.productos,
       errorCarrito:
-        'No se pudo leer el carrito guardado. Sus datos no se reemplazaron.',
+        'El carrito guardado contiene datos inválidos. ' +
+        'Puedes reiniciarlo sin borrar productos ni pedidos.',
     }
   }
 }
