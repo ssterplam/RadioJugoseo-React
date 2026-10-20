@@ -37,7 +37,8 @@ export default function MenuPrincipal({
 
         <Navbar.Toggle
           aria-controls="navbarJugoseo"
-          aria-label="Abrir menú"
+          label="Abrir menú"
+          aria-expanded={expandido}
         />
 
         <Navbar.Collapse id="navbarJugoseo">
